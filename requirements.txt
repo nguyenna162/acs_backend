@@ -1,0 +1,30 @@
+# Core Framework & API
+Django>=5.0.0
+djangorestframework>=3.14.0
+drf-spectacular>=0.27.0
+
+# Asynchronous & WebSockets
+channels>=4.0.0
+daphne>=4.0.0
+uvicorn>=0.28.0
+
+# Database
+psycopg2-binary>=2.9.9
+
+# IoT & Protocols
+paho-mqtt>=1.6.1
+ujson>=5.9.0
+cbor2>=5.6.0
+msgpack>=1.0.8
+
+# Scientific & Optimization Algorithms
+numpy>=1.26.0
+scipy>=1.12.0
+
+# Third-party Integrations & Utilities
+requests>=2.31.0
+python-dateutil>=2.8.2
+
+# Testing & Quality
+pytest>=8.0.0
+pytest-django>=4.8.0

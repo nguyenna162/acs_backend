@@ -1,0 +1,5099 @@
+openapi: 3.0.3
+info:
+  title: ACS Backend API (AMR Control System)
+  version: 2.1.0
+  description: Hệ thống điều khiển & quản lý robot vận chuyển tự hành AMR/AGV theo
+    chuẩn VDA 5050 - Khu vực CNC Prod 2G
+paths:
+  /api/acs/dispatch/:
+    post:
+      operationId: acs_dispatch_create
+      description: Tạo lệnh điều xe AMR đến node hoặc vận chuyển hàng giữa 2 điểm.
+      tags:
+      - acs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DispatchAMRInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DispatchAMRInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DispatchAMRInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/acs/find-path/:
+    post:
+      operationId: acs_find_path_create
+      description: Tìm lộ trình tối ưu VDA 5050 giữa 2 Node sử dụng giải thuật Dijkstra
+        kết hợp Cache Graph.
+      tags:
+      - acs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FindPathInput'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FindPathInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FindPathInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/acs/log-file/:
+    get:
+      operationId: acs_log_file_retrieve
+      description: Tra cứu nội dung file nhật ký vận hành acs_system.log.
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/acs/logs/:
+    get:
+      operationId: acs_logs_list
+      description: Tra cứu nhật ký sự kiện hệ thống.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLogList'
+          description: ''
+  /api/acs/logs/{id}/:
+    get:
+      operationId: acs_logs_retrieve
+      description: Tra cứu nhật ký sự kiện hệ thống.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this log.
+        required: true
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Log'
+          description: ''
+  /api/acs/masters/:
+    get:
+      operationId: acs_masters_list
+      description: Xem xét các phiên điều phối Master điều hành robot.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderMasterList'
+          description: ''
+  /api/acs/masters/{id}/:
+    get:
+      operationId: acs_masters_retrieve
+      description: Xem xét các phiên điều phối Master điều hành robot.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this order master.
+        required: true
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderMaster'
+          description: ''
+  /api/acs/orders/:
+    get:
+      operationId: acs_orders_list
+      description: Quản lý các đơn vận chuyển AMR trong nhà máy.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderList'
+          description: ''
+    post:
+      operationId: acs_orders_create
+      description: Quản lý các đơn vận chuyển AMR trong nhà máy.
+      tags:
+      - acs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /api/acs/orders/{id}/:
+    get:
+      operationId: acs_orders_retrieve
+      description: Quản lý các đơn vận chuyển AMR trong nhà máy.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this order.
+        required: true
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    put:
+      operationId: acs_orders_update
+      description: Quản lý các đơn vận chuyển AMR trong nhà máy.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this order.
+        required: true
+      tags:
+      - acs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    patch:
+      operationId: acs_orders_partial_update
+      description: Quản lý các đơn vận chuyển AMR trong nhà máy.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this order.
+        required: true
+      tags:
+      - acs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrder'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    delete:
+      operationId: acs_orders_destroy
+      description: Quản lý các đơn vận chuyển AMR trong nhà máy.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this order.
+        required: true
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/acs/suborders/:
+    get:
+      operationId: acs_suborders_list
+      description: Chi tiết từng phân đoạn SubOrder theo tiêu chuẩn VDA 5050.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSubOrderList'
+          description: ''
+  /api/acs/suborders/{id}/:
+    get:
+      operationId: acs_suborders_retrieve
+      description: Chi tiết từng phân đoạn SubOrder theo tiêu chuẩn VDA 5050.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this sub order.
+        required: true
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubOrder'
+          description: ''
+  /api/acs/supply-requests/:
+    get:
+      operationId: acs_supply_requests_list
+      description: Quản lý nhu cầu cấp phôi / vật tư dây chuyền sản xuất Aligo.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSupplyRequestList'
+          description: ''
+    post:
+      operationId: acs_supply_requests_create
+      description: Quản lý nhu cầu cấp phôi / vật tư dây chuyền sản xuất Aligo.
+      tags:
+      - acs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplyRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyRequest'
+          description: ''
+  /api/acs/supply-requests/{id}/:
+    get:
+      operationId: acs_supply_requests_retrieve
+      description: Quản lý nhu cầu cấp phôi / vật tư dây chuyền sản xuất Aligo.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this supply request.
+        required: true
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyRequest'
+          description: ''
+    put:
+      operationId: acs_supply_requests_update
+      description: Quản lý nhu cầu cấp phôi / vật tư dây chuyền sản xuất Aligo.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this supply request.
+        required: true
+      tags:
+      - acs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SupplyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SupplyRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyRequest'
+          description: ''
+    patch:
+      operationId: acs_supply_requests_partial_update
+      description: Quản lý nhu cầu cấp phôi / vật tư dây chuyền sản xuất Aligo.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this supply request.
+        required: true
+      tags:
+      - acs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSupplyRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupplyRequest'
+          description: ''
+    delete:
+      operationId: acs_supply_requests_destroy
+      description: Quản lý nhu cầu cấp phôi / vật tư dây chuyền sản xuất Aligo.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this supply request.
+        required: true
+      tags:
+      - acs
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/amr/statelogs/:
+    get:
+      operationId: amr_statelogs_list
+      description: Tra cứu lịch sử trạng thái đo xa của robot (Audit Log).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - amr
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAmrStateLogList'
+          description: ''
+  /api/amr/statelogs/{id}/:
+    get:
+      operationId: amr_statelogs_retrieve
+      description: Tra cứu lịch sử trạng thái đo xa của robot (Audit Log).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this amr state log.
+        required: true
+      tags:
+      - amr
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AmrStateLog'
+          description: ''
+  /api/amr/topics/:
+    get:
+      operationId: amr_topics_list
+      description: Cấu hình các MQTT topic ánh xạ cho từng xe.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - amr
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTopicControlList'
+          description: ''
+    post:
+      operationId: amr_topics_create
+      description: Cấu hình các MQTT topic ánh xạ cho từng xe.
+      tags:
+      - amr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicControl'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TopicControl'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TopicControl'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicControl'
+          description: ''
+  /api/amr/topics/{id}/:
+    get:
+      operationId: amr_topics_retrieve
+      description: Cấu hình các MQTT topic ánh xạ cho từng xe.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this topic control.
+        required: true
+      tags:
+      - amr
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicControl'
+          description: ''
+    put:
+      operationId: amr_topics_update
+      description: Cấu hình các MQTT topic ánh xạ cho từng xe.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this topic control.
+        required: true
+      tags:
+      - amr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicControl'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TopicControl'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TopicControl'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicControl'
+          description: ''
+    patch:
+      operationId: amr_topics_partial_update
+      description: Cấu hình các MQTT topic ánh xạ cho từng xe.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this topic control.
+        required: true
+      tags:
+      - amr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTopicControl'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTopicControl'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTopicControl'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicControl'
+          description: ''
+    delete:
+      operationId: amr_topics_destroy
+      description: Cấu hình các MQTT topic ánh xạ cho từng xe.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this topic control.
+        required: true
+      tags:
+      - amr
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/amr/vehicles/:
+    get:
+      operationId: amr_vehicles_list
+      description: Quản lý các phương tiện AMR và trạng thái vận hành.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - amr
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAmrVehicleList'
+          description: ''
+    post:
+      operationId: amr_vehicles_create
+      description: Quản lý các phương tiện AMR và trạng thái vận hành.
+      tags:
+      - amr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AmrVehicle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AmrVehicle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AmrVehicle'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AmrVehicle'
+          description: ''
+  /api/amr/vehicles/{serial_number}/:
+    get:
+      operationId: amr_vehicles_retrieve
+      description: Quản lý các phương tiện AMR và trạng thái vận hành.
+      parameters:
+      - in: path
+        name: serial_number
+        schema:
+          type: string
+        description: A unique value identifying this amr vehicle.
+        required: true
+      tags:
+      - amr
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AmrVehicle'
+          description: ''
+    put:
+      operationId: amr_vehicles_update
+      description: Quản lý các phương tiện AMR và trạng thái vận hành.
+      parameters:
+      - in: path
+        name: serial_number
+        schema:
+          type: string
+        description: A unique value identifying this amr vehicle.
+        required: true
+      tags:
+      - amr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AmrVehicle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AmrVehicle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AmrVehicle'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AmrVehicle'
+          description: ''
+    patch:
+      operationId: amr_vehicles_partial_update
+      description: Quản lý các phương tiện AMR và trạng thái vận hành.
+      parameters:
+      - in: path
+        name: serial_number
+        schema:
+          type: string
+        description: A unique value identifying this amr vehicle.
+        required: true
+      tags:
+      - amr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAmrVehicle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAmrVehicle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAmrVehicle'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AmrVehicle'
+          description: ''
+    delete:
+      operationId: amr_vehicles_destroy
+      description: Quản lý các phương tiện AMR và trạng thái vận hành.
+      parameters:
+      - in: path
+        name: serial_number
+        schema:
+          type: string
+        description: A unique value identifying this amr vehicle.
+        required: true
+      tags:
+      - amr
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/amr/vehicles/{serial_number}/reset_status/:
+    post:
+      operationId: amr_vehicles_reset_status_create
+      description: Quản lý các phương tiện AMR và trạng thái vận hành.
+      parameters:
+      - in: path
+        name: serial_number
+        schema:
+          type: string
+        description: A unique value identifying this amr vehicle.
+        required: true
+      tags:
+      - amr
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AmrVehicle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AmrVehicle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AmrVehicle'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AmrVehicle'
+          description: ''
+  /api/buffer/schedules/:
+    get:
+      operationId: buffer_schedules_list
+      description: Lập lịch trình điểm dừng phục vụ ca sản xuất.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedScheduleList'
+          description: ''
+    post:
+      operationId: buffer_schedules_create
+      description: Lập lịch trình điểm dừng phục vụ ca sản xuất.
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+          description: ''
+  /api/buffer/schedules/{id}/:
+    get:
+      operationId: buffer_schedules_retrieve
+      description: Lập lịch trình điểm dừng phục vụ ca sản xuất.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule.
+        required: true
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+          description: ''
+    put:
+      operationId: buffer_schedules_update
+      description: Lập lịch trình điểm dừng phục vụ ca sản xuất.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule.
+        required: true
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+          description: ''
+    patch:
+      operationId: buffer_schedules_partial_update
+      description: Lập lịch trình điểm dừng phục vụ ca sản xuất.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule.
+        required: true
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSchedule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSchedule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSchedule'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+          description: ''
+    delete:
+      operationId: buffer_schedules_destroy
+      description: Lập lịch trình điểm dừng phục vụ ca sản xuất.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule.
+        required: true
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/buffer/stations/:
+    get:
+      operationId: buffer_stations_list
+      description: Quản lý các trạm đệm (Buffer / Bục giao nhận hàng).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBufferList'
+          description: ''
+    post:
+      operationId: buffer_stations_create
+      description: Quản lý các trạm đệm (Buffer / Bục giao nhận hàng).
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Buffer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Buffer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Buffer'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Buffer'
+          description: ''
+  /api/buffer/stations/{id}/:
+    get:
+      operationId: buffer_stations_retrieve
+      description: Quản lý các trạm đệm (Buffer / Bục giao nhận hàng).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this buffer.
+        required: true
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Buffer'
+          description: ''
+    put:
+      operationId: buffer_stations_update
+      description: Quản lý các trạm đệm (Buffer / Bục giao nhận hàng).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this buffer.
+        required: true
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Buffer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Buffer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Buffer'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Buffer'
+          description: ''
+    patch:
+      operationId: buffer_stations_partial_update
+      description: Quản lý các trạm đệm (Buffer / Bục giao nhận hàng).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this buffer.
+        required: true
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBuffer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBuffer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBuffer'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Buffer'
+          description: ''
+    delete:
+      operationId: buffer_stations_destroy
+      description: Quản lý các trạm đệm (Buffer / Bục giao nhận hàng).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this buffer.
+        required: true
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/buffer/stop-actions/:
+    get:
+      operationId: buffer_stop_actions_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStopActionList'
+          description: ''
+    post:
+      operationId: buffer_stop_actions_create
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StopAction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StopAction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StopAction'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StopAction'
+          description: ''
+  /api/buffer/stop-actions/{id}/:
+    get:
+      operationId: buffer_stop_actions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this stop action.
+        required: true
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StopAction'
+          description: ''
+    put:
+      operationId: buffer_stop_actions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this stop action.
+        required: true
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StopAction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StopAction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StopAction'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StopAction'
+          description: ''
+    patch:
+      operationId: buffer_stop_actions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this stop action.
+        required: true
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStopAction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStopAction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStopAction'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StopAction'
+          description: ''
+    delete:
+      operationId: buffer_stop_actions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this stop action.
+        required: true
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/buffer/stops/:
+    get:
+      operationId: buffer_stops_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedScheduleStopList'
+          description: ''
+    post:
+      operationId: buffer_stops_create
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleStop'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScheduleStop'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScheduleStop'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleStop'
+          description: ''
+  /api/buffer/stops/{id}/:
+    get:
+      operationId: buffer_stops_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule stop.
+        required: true
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleStop'
+          description: ''
+    put:
+      operationId: buffer_stops_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule stop.
+        required: true
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleStop'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ScheduleStop'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ScheduleStop'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleStop'
+          description: ''
+    patch:
+      operationId: buffer_stops_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule stop.
+        required: true
+      tags:
+      - buffer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleStop'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleStop'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedScheduleStop'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleStop'
+          description: ''
+    delete:
+      operationId: buffer_stops_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this schedule stop.
+        required: true
+      tags:
+      - buffer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/map/actions/:
+    get:
+      operationId: map_actions_list
+      description: Quản lý danh mục các Action VDA 5050.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedActionList'
+          description: ''
+    post:
+      operationId: map_actions_create
+      description: Quản lý danh mục các Action VDA 5050.
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Action'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Action'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Action'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Action'
+          description: ''
+  /api/map/actions/{id}/:
+    get:
+      operationId: map_actions_retrieve
+      description: Quản lý danh mục các Action VDA 5050.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this action.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Action'
+          description: ''
+    put:
+      operationId: map_actions_update
+      description: Quản lý danh mục các Action VDA 5050.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this action.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Action'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Action'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Action'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Action'
+          description: ''
+    patch:
+      operationId: map_actions_partial_update
+      description: Quản lý danh mục các Action VDA 5050.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this action.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAction'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAction'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAction'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Action'
+          description: ''
+    delete:
+      operationId: map_actions_destroy
+      description: Quản lý danh mục các Action VDA 5050.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this action.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/map/bases/:
+    get:
+      operationId: map_bases_list
+      description: Quản lý các phiên bản bản đồ nhà máy.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMapBaseList'
+          description: ''
+    post:
+      operationId: map_bases_create
+      description: Quản lý các phiên bản bản đồ nhà máy.
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MapBase'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MapBase'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MapBase'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapBase'
+          description: ''
+  /api/map/bases/{id}/:
+    get:
+      operationId: map_bases_retrieve
+      description: Quản lý các phiên bản bản đồ nhà máy.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this map base.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapBase'
+          description: ''
+    put:
+      operationId: map_bases_update
+      description: Quản lý các phiên bản bản đồ nhà máy.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this map base.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MapBase'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MapBase'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MapBase'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapBase'
+          description: ''
+    patch:
+      operationId: map_bases_partial_update
+      description: Quản lý các phiên bản bản đồ nhà máy.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this map base.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMapBase'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMapBase'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMapBase'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapBase'
+          description: ''
+    delete:
+      operationId: map_bases_destroy
+      description: Quản lý các phiên bản bản đồ nhà máy.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this map base.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/map/edges/:
+    get:
+      operationId: map_edges_list
+      description: Quản lý các Edge (đoạn nối chuyển động giữa các node).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEdgeList'
+          description: ''
+    post:
+      operationId: map_edges_create
+      description: Quản lý các Edge (đoạn nối chuyển động giữa các node).
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Edge'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Edge'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Edge'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+  /api/map/edges/{id}/:
+    get:
+      operationId: map_edges_retrieve
+      description: Quản lý các Edge (đoạn nối chuyển động giữa các node).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this edge.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+    put:
+      operationId: map_edges_update
+      description: Quản lý các Edge (đoạn nối chuyển động giữa các node).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this edge.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Edge'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Edge'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Edge'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+    patch:
+      operationId: map_edges_partial_update
+      description: Quản lý các Edge (đoạn nối chuyển động giữa các node).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this edge.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEdge'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEdge'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEdge'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+    delete:
+      operationId: map_edges_destroy
+      description: Quản lý các Edge (đoạn nối chuyển động giữa các node).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this edge.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/map/grid-layers/:
+    get:
+      operationId: map_grid_layers_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGridMapLayerList'
+          description: ''
+    post:
+      operationId: map_grid_layers_create
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GridMapLayer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GridMapLayer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GridMapLayer'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GridMapLayer'
+          description: ''
+  /api/map/grid-layers/{id}/:
+    get:
+      operationId: map_grid_layers_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this grid map layer.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GridMapLayer'
+          description: ''
+    put:
+      operationId: map_grid_layers_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this grid map layer.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GridMapLayer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GridMapLayer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GridMapLayer'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GridMapLayer'
+          description: ''
+    patch:
+      operationId: map_grid_layers_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this grid map layer.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedGridMapLayer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedGridMapLayer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedGridMapLayer'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GridMapLayer'
+          description: ''
+    delete:
+      operationId: map_grid_layers_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this grid map layer.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/map/nodes/:
+    get:
+      operationId: map_nodes_list
+      description: Quản lý các Node (điểm dừng, lấy hàng, sạc pin) trên bản đồ.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNodeList'
+          description: ''
+    post:
+      operationId: map_nodes_create
+      description: Quản lý các Node (điểm dừng, lấy hàng, sạc pin) trên bản đồ.
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Node'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Node'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Node'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+  /api/map/nodes/{id}/:
+    get:
+      operationId: map_nodes_retrieve
+      description: Quản lý các Node (điểm dừng, lấy hàng, sạc pin) trên bản đồ.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this node.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+    put:
+      operationId: map_nodes_update
+      description: Quản lý các Node (điểm dừng, lấy hàng, sạc pin) trên bản đồ.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this node.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Node'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Node'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Node'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+    patch:
+      operationId: map_nodes_partial_update
+      description: Quản lý các Node (điểm dừng, lấy hàng, sạc pin) trên bản đồ.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this node.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNode'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNode'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+    delete:
+      operationId: map_nodes_destroy
+      description: Quản lý các Node (điểm dừng, lấy hàng, sạc pin) trên bản đồ.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this node.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/map/traffic-zones/:
+    get:
+      operationId: map_traffic_zones_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTrafficZoneList'
+          description: ''
+    post:
+      operationId: map_traffic_zones_create
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrafficZone'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TrafficZone'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TrafficZone'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrafficZone'
+          description: ''
+  /api/map/traffic-zones/{id}/:
+    get:
+      operationId: map_traffic_zones_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this traffic zone.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrafficZone'
+          description: ''
+    put:
+      operationId: map_traffic_zones_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this traffic zone.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrafficZone'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TrafficZone'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TrafficZone'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrafficZone'
+          description: ''
+    patch:
+      operationId: map_traffic_zones_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this traffic zone.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedTrafficZone'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedTrafficZone'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedTrafficZone'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrafficZone'
+          description: ''
+    delete:
+      operationId: map_traffic_zones_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this traffic zone.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/map/world-layers/:
+    get:
+      operationId: map_world_layers_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedWorldMapLayerList'
+          description: ''
+    post:
+      operationId: map_world_layers_create
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorldMapLayer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorldMapLayer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorldMapLayer'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorldMapLayer'
+          description: ''
+  /api/map/world-layers/{id}/:
+    get:
+      operationId: map_world_layers_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this world map layer.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorldMapLayer'
+          description: ''
+    put:
+      operationId: map_world_layers_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this world map layer.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorldMapLayer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorldMapLayer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorldMapLayer'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorldMapLayer'
+          description: ''
+    patch:
+      operationId: map_world_layers_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this world map layer.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWorldMapLayer'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWorldMapLayer'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWorldMapLayer'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorldMapLayer'
+          description: ''
+    delete:
+      operationId: map_world_layers_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this world map layer.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/map/zone-sets/:
+    get:
+      operationId: map_zone_sets_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedZoneSetList'
+          description: ''
+    post:
+      operationId: map_zone_sets_create
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneSet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ZoneSet'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ZoneSet'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZoneSet'
+          description: ''
+  /api/map/zone-sets/{id}/:
+    get:
+      operationId: map_zone_sets_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this zone set.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZoneSet'
+          description: ''
+    put:
+      operationId: map_zone_sets_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this zone set.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneSet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ZoneSet'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ZoneSet'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZoneSet'
+          description: ''
+    patch:
+      operationId: map_zone_sets_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this zone set.
+        required: true
+      tags:
+      - map
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedZoneSet'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedZoneSet'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedZoneSet'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZoneSet'
+          description: ''
+    delete:
+      operationId: map_zone_sets_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this zone set.
+        required: true
+      tags:
+      - map
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    Action:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          $ref: '#/components/schemas/ActionTypeEnum'
+        blocking_type:
+          $ref: '#/components/schemas/BlockingTypeEnum'
+        parameters: {}
+        description:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - type
+    ActionOnEdge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        action_detail:
+          allOf:
+          - $ref: '#/components/schemas/Action'
+          readOnly: true
+        action:
+          type: string
+          format: uuid
+        edge:
+          type: string
+          format: uuid
+      required:
+      - action
+      - action_detail
+      - edge
+      - id
+    ActionOnNode:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        action_detail:
+          allOf:
+          - $ref: '#/components/schemas/Action'
+          readOnly: true
+        action:
+          type: string
+          format: uuid
+        node:
+          type: string
+          format: uuid
+      required:
+      - action
+      - action_detail
+      - id
+      - node
+    ActionTypeEnum:
+      enum:
+      - CHARGING
+      - LIFT
+      - DROP
+      - SCAN
+      - WAIT
+      - INIT_POSITION
+      type: string
+      description: |-
+        * `CHARGING` - Charging
+        * `LIFT` - Lift Pallet
+        * `DROP` - Drop Pallet
+        * `SCAN` - Scan QR/Barcode
+        * `WAIT` - Wait
+        * `INIT_POSITION` - Init Position
+    AmrStateLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        order_id:
+          type: string
+          maxLength: 100
+        order_update_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        operating_mode:
+          type: string
+          maxLength: 50
+        node_state: {}
+        edge_state: {}
+        action_state: {}
+        loads: {}
+        errors: {}
+        information: {}
+        amr_position: {}
+        velocity: {}
+        battery_state: {}
+        safety_state: {}
+        driving:
+          type: boolean
+        paused:
+          type: boolean
+        new_base_request:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        serialNumber:
+          type: string
+      required:
+      - created_at
+      - id
+      - serialNumber
+    AmrVehicle:
+      type: object
+      properties:
+        serial_number:
+          type: string
+          maxLength: 100
+        topics:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopicControl'
+          readOnly: true
+        amr_model:
+          type: string
+          maxLength: 100
+        interface:
+          type: string
+          maxLength: 50
+        manufacturer:
+          type: string
+          maxLength: 100
+        version:
+          type: string
+          maxLength: 50
+        ip_address:
+          type: string
+          format: ipv4
+          nullable: true
+        port:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        last_heartbeat:
+          type: string
+          format: date-time
+          nullable: true
+        is_online:
+          type: boolean
+        is_idle:
+          type: boolean
+        last_node_id:
+          type: string
+          maxLength: 100
+        order_id:
+          type: string
+          maxLength: 100
+        order_update_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        node_states: {}
+        edge_states: {}
+        action_state: {}
+        loads: {}
+        errors: {}
+        information: {}
+        amr_position: {}
+        velocity: {}
+        battery_state: {}
+        safety_state: {}
+        driving:
+          type: boolean
+        paused:
+          type: boolean
+        new_base_request:
+          type: boolean
+        operating_mode:
+          $ref: '#/components/schemas/OperatingModeEnum'
+        zone_set_id:
+          type: string
+          maxLength: 100
+        is_used_by_master:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - serial_number
+      - topics
+    BlockingTypeEnum:
+      enum:
+      - NONE
+      - SOFT
+      - HARD
+      type: string
+      description: |-
+        * `NONE` - None
+        * `SOFT` - Soft
+        * `HARD` - Hard
+    Buffer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        rssid:
+          type: string
+          maxLength: 100
+        type:
+          $ref: '#/components/schemas/BufferTypeEnum'
+        product_model:
+          type: string
+          maxLength: 100
+        process:
+          type: string
+          maxLength: 100
+        role_id:
+          type: string
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/BufferStatusEnum'
+        enable:
+          type: boolean
+        ip_address:
+          type: string
+          format: ipv4
+          nullable: true
+        update_time:
+          type: string
+          format: date-time
+          readOnly: true
+        last_success_transfer:
+          type: string
+          format: date-time
+          nullable: true
+        time_gap_btw_transfer:
+          type: string
+          nullable: true
+        data: {}
+        node:
+          type: string
+          format: uuid
+          nullable: true
+        handle_order:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - id
+      - name
+      - rssid
+      - update_time
+    BufferStatusEnum:
+      enum:
+      - EMPTY
+      - OCCUPIED
+      - RESERVED
+      - ERROR
+      type: string
+      description: |-
+        * `EMPTY` - Empty
+        * `OCCUPIED` - Occupied
+        * `RESERVED` - Reserved
+        * `ERROR` - Error
+    BufferTypeEnum:
+      enum:
+      - PICK
+      - DROP
+      - DUAL
+      - INSPECTION
+      type: string
+      description: |-
+        * `PICK` - Pick
+        * `DROP` - Drop
+        * `DUAL` - Dual (Pick/Drop)
+        * `INSPECTION` - Inspection
+    DirectionEnum:
+      enum:
+      - FORWARD
+      - REVERSE
+      - BIDIRECTIONAL
+      type: string
+      description: |-
+        * `FORWARD` - Forward
+        * `REVERSE` - Reverse
+        * `BIDIRECTIONAL` - Bidirectional
+    DispatchAMRInput:
+      type: object
+      properties:
+        amr_serial:
+          type: string
+          description: Mã serial AMR chỉ định (để trống nếu muốn hệ thống tự lập lịch)
+        source_node_id:
+          type: string
+          description: Điểm lấy hàng / xuất phát
+        target_node_id:
+          type: string
+          description: Điểm trả hàng / đích đến
+        order_type:
+          allOf:
+          - $ref: '#/components/schemas/OrderTypeEnum'
+          default: TRANSPORT
+        priority:
+          allOf:
+          - $ref: '#/components/schemas/PriorityEnum'
+          default: NORMAL
+        description:
+          type: string
+          default: ''
+      required:
+      - target_node_id
+    Edge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionOnEdge'
+          readOnly: true
+        max_speed:
+          type: number
+          format: double
+        orientation:
+          type: number
+          format: double
+        max_rotation_speed:
+          type: number
+          format: double
+        length:
+          type: number
+          format: double
+        orientation_type:
+          type: string
+          maxLength: 50
+        direction:
+          $ref: '#/components/schemas/DirectionEnum'
+        rotation_allowed:
+          type: boolean
+        trajectory: {}
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 255
+        map:
+          type: string
+          format: uuid
+        start_node:
+          type: string
+          format: uuid
+        end_node:
+          type: string
+          format: uuid
+        traffic_zone:
+          type: string
+          format: uuid
+          nullable: true
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - actions
+      - end_node
+      - id
+      - map
+      - start_node
+    FindPathInput:
+      type: object
+      properties:
+        start_node_id:
+          type: string
+          description: ID của Node xuất phát
+        target_node_id:
+          type: string
+          description: ID của Node đích
+      required:
+      - start_node_id
+      - target_node_id
+    GridMapLayer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        image:
+          type: string
+          format: uri
+          nullable: true
+        x_set_background:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        y_set_background:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        resize:
+          type: number
+          format: double
+        opacity:
+          type: number
+          format: double
+        map:
+          type: string
+          format: uuid
+      required:
+      - id
+      - map
+      - name
+    Log:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        level:
+          type: string
+          maxLength: 16
+        module:
+          type: string
+          maxLength: 64
+        message:
+          type: string
+        data: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message
+      - module
+    MapBase:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        world_layer:
+          allOf:
+          - $ref: '#/components/schemas/WorldMapLayer'
+          readOnly: true
+        grid_layer:
+          allOf:
+          - $ref: '#/components/schemas/GridMapLayer'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        part:
+          type: string
+          maxLength: 50
+        version:
+          type: string
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/MapBaseStatusEnum'
+        description:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_by:
+          type: integer
+          nullable: true
+      required:
+      - created_at
+      - grid_layer
+      - id
+      - name
+      - world_layer
+    MapBaseStatusEnum:
+      enum:
+      - ACTIVE
+      - INACTIVE
+      - DRAFT
+      type: string
+      description: |-
+        * `ACTIVE` - Active
+        * `INACTIVE` - Inactive
+        * `DRAFT` - Draft
+    Node:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionOnNode'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        type:
+          $ref: '#/components/schemas/NodeTypeEnum'
+        description:
+          type: string
+          maxLength: 255
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+        theta:
+          type: number
+          format: double
+        allow_deviation_xy:
+          type: number
+          format: double
+        allow_deviation_theta:
+          type: number
+          format: double
+        use_node:
+          type: boolean
+        is_init:
+          type: boolean
+        is_extended:
+          type: boolean
+        map:
+          type: string
+          format: uuid
+        traffic_zone:
+          type: string
+          format: uuid
+          nullable: true
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - actions
+      - id
+      - map
+      - name
+      - x
+      - y
+    NodeTypeEnum:
+      enum:
+      - TRANSIT
+      - PICK
+      - DROP
+      - CHARGE
+      - PARK
+      type: string
+      description: |-
+        * `TRANSIT` - Transit
+        * `PICK` - Pick
+        * `DROP` - Drop
+        * `CHARGE` - Charge
+        * `PARK` - Park
+    OperatingModeEnum:
+      enum:
+      - AUTOMATIC
+      - SEMIAUTOMATIC
+      - MANUAL
+      - SERVICE
+      - TEACHIN
+      type: string
+      description: |-
+        * `AUTOMATIC` - Automatic
+        * `SEMIAUTOMATIC` - Semiautomatic
+        * `MANUAL` - Manual
+        * `SERVICE` - Service
+        * `TEACHIN` - Teachin
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        suborders:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubOrder'
+          readOnly: true
+        order_id:
+          type: string
+          maxLength: 100
+        order_type:
+          $ref: '#/components/schemas/OrderTypeEnum'
+        status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        source_node:
+          type: string
+          format: uuid
+          nullable: true
+        target_node:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - created_at
+      - id
+      - order_id
+      - suborders
+      - updated_at
+    OrderMaster:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        suborders:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubOrder'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        status:
+          $ref: '#/components/schemas/OrderMasterStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - suborders
+      - updated_at
+    OrderMasterStatusEnum:
+      enum:
+      - PENDING
+      - PROCESSING
+      - COMPLETED
+      - FAILED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `PROCESSING` - Processing
+        * `COMPLETED` - Completed
+        * `FAILED` - Failed
+    OrderStatusEnum:
+      enum:
+      - PENDING
+      - PROCESSING
+      - COMPLETED
+      - FAILED
+      - CANCELLED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `PROCESSING` - Processing
+        * `COMPLETED` - Completed
+        * `FAILED` - Failed
+        * `CANCELLED` - Cancelled
+    OrderTypeEnum:
+      enum:
+      - TRANSPORT
+      - CHARGE
+      - PARK
+      - MAINTENANCE
+      type: string
+      description: |-
+        * `TRANSPORT` - Transport
+        * `CHARGE` - Charge
+        * `PARK` - Park
+        * `MAINTENANCE` - Maintenance
+    PaginatedActionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Action'
+    PaginatedAmrStateLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AmrStateLog'
+    PaginatedAmrVehicleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AmrVehicle'
+    PaginatedBufferList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Buffer'
+    PaginatedEdgeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+    PaginatedGridMapLayerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/GridMapLayer'
+    PaginatedLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Log'
+    PaginatedMapBaseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MapBase'
+    PaginatedNodeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+    PaginatedOrderList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+    PaginatedOrderMasterList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderMaster'
+    PaginatedScheduleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Schedule'
+    PaginatedScheduleStopList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleStop'
+    PaginatedStopActionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StopAction'
+    PaginatedSubOrderList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubOrder'
+    PaginatedSupplyRequestList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SupplyRequest'
+    PaginatedTopicControlList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopicControl'
+    PaginatedTrafficZoneList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrafficZone'
+    PaginatedWorldMapLayerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorldMapLayer'
+    PaginatedZoneSetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZoneSet'
+    PatchedAction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          $ref: '#/components/schemas/ActionTypeEnum'
+        blocking_type:
+          $ref: '#/components/schemas/BlockingTypeEnum'
+        parameters: {}
+        description:
+          type: string
+          maxLength: 255
+    PatchedAmrVehicle:
+      type: object
+      properties:
+        serial_number:
+          type: string
+          maxLength: 100
+        topics:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopicControl'
+          readOnly: true
+        amr_model:
+          type: string
+          maxLength: 100
+        interface:
+          type: string
+          maxLength: 50
+        manufacturer:
+          type: string
+          maxLength: 100
+        version:
+          type: string
+          maxLength: 50
+        ip_address:
+          type: string
+          format: ipv4
+          nullable: true
+        port:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        last_heartbeat:
+          type: string
+          format: date-time
+          nullable: true
+        is_online:
+          type: boolean
+        is_idle:
+          type: boolean
+        last_node_id:
+          type: string
+          maxLength: 100
+        order_id:
+          type: string
+          maxLength: 100
+        order_update_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        node_states: {}
+        edge_states: {}
+        action_state: {}
+        loads: {}
+        errors: {}
+        information: {}
+        amr_position: {}
+        velocity: {}
+        battery_state: {}
+        safety_state: {}
+        driving:
+          type: boolean
+        paused:
+          type: boolean
+        new_base_request:
+          type: boolean
+        operating_mode:
+          $ref: '#/components/schemas/OperatingModeEnum'
+        zone_set_id:
+          type: string
+          maxLength: 100
+        is_used_by_master:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedBuffer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        rssid:
+          type: string
+          maxLength: 100
+        type:
+          $ref: '#/components/schemas/BufferTypeEnum'
+        product_model:
+          type: string
+          maxLength: 100
+        process:
+          type: string
+          maxLength: 100
+        role_id:
+          type: string
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/BufferStatusEnum'
+        enable:
+          type: boolean
+        ip_address:
+          type: string
+          format: ipv4
+          nullable: true
+        update_time:
+          type: string
+          format: date-time
+          readOnly: true
+        last_success_transfer:
+          type: string
+          format: date-time
+          nullable: true
+        time_gap_btw_transfer:
+          type: string
+          nullable: true
+        data: {}
+        node:
+          type: string
+          format: uuid
+          nullable: true
+        handle_order:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedEdge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionOnEdge'
+          readOnly: true
+        max_speed:
+          type: number
+          format: double
+        orientation:
+          type: number
+          format: double
+        max_rotation_speed:
+          type: number
+          format: double
+        length:
+          type: number
+          format: double
+        orientation_type:
+          type: string
+          maxLength: 50
+        direction:
+          $ref: '#/components/schemas/DirectionEnum'
+        rotation_allowed:
+          type: boolean
+        trajectory: {}
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 255
+        map:
+          type: string
+          format: uuid
+        start_node:
+          type: string
+          format: uuid
+        end_node:
+          type: string
+          format: uuid
+        traffic_zone:
+          type: string
+          format: uuid
+          nullable: true
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedGridMapLayer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        image:
+          type: string
+          format: uri
+          nullable: true
+        x_set_background:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        y_set_background:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        resize:
+          type: number
+          format: double
+        opacity:
+          type: number
+          format: double
+        map:
+          type: string
+          format: uuid
+    PatchedMapBase:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        world_layer:
+          allOf:
+          - $ref: '#/components/schemas/WorldMapLayer'
+          readOnly: true
+        grid_layer:
+          allOf:
+          - $ref: '#/components/schemas/GridMapLayer'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        part:
+          type: string
+          maxLength: 50
+        version:
+          type: string
+          maxLength: 50
+        status:
+          $ref: '#/components/schemas/MapBaseStatusEnum'
+        description:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        created_by:
+          type: integer
+          nullable: true
+    PatchedNode:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionOnNode'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        type:
+          $ref: '#/components/schemas/NodeTypeEnum'
+        description:
+          type: string
+          maxLength: 255
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+        theta:
+          type: number
+          format: double
+        allow_deviation_xy:
+          type: number
+          format: double
+        allow_deviation_theta:
+          type: number
+          format: double
+        use_node:
+          type: boolean
+        is_init:
+          type: boolean
+        is_extended:
+          type: boolean
+        map:
+          type: string
+          format: uuid
+        traffic_zone:
+          type: string
+          format: uuid
+          nullable: true
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        suborders:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubOrder'
+          readOnly: true
+        order_id:
+          type: string
+          maxLength: 100
+        order_type:
+          $ref: '#/components/schemas/OrderTypeEnum'
+        status:
+          $ref: '#/components/schemas/OrderStatusEnum'
+        priority:
+          $ref: '#/components/schemas/PriorityEnum'
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        source_node:
+          type: string
+          format: uuid
+          nullable: true
+        target_node:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedSchedule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleStop'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 255
+        number_of_amr_need:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        number_of_active_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        enable:
+          type: boolean
+        map:
+          type: string
+          format: uuid
+    PatchedScheduleStop:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/StopAction'
+          readOnly: true
+        role_id:
+          type: string
+          maxLength: 50
+        sequence:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        schedule:
+          type: string
+          format: uuid
+    PatchedStopAction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        sequence:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        schedule_stop:
+          type: string
+          format: uuid
+        action:
+          type: string
+          format: uuid
+    PatchedSupplyRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        line_id:
+          type: string
+          maxLength: 64
+        material_id:
+          type: string
+          maxLength: 64
+        priority:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        sla_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/SupplyRequestStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        buffer:
+          type: string
+          format: uuid
+    PatchedTopicControl:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        topic:
+          type: string
+          maxLength: 255
+        topic_type:
+          $ref: '#/components/schemas/TopicTypeEnum'
+        manufacturer:
+          type: string
+          maxLength: 100
+        version:
+          type: string
+          maxLength: 50
+        header_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        last_call:
+          type: string
+          format: date-time
+          nullable: true
+        amr:
+          type: string
+    PatchedTrafficZone:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        type:
+          $ref: '#/components/schemas/TrafficZoneTypeEnum'
+        description:
+          type: string
+          maxLength: 255
+        max_occupancy:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        priority:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        max_speed:
+          type: number
+          format: double
+        zone_set:
+          type: string
+          format: uuid
+        map:
+          type: string
+          format: uuid
+    PatchedWorldMapLayer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        image:
+          type: string
+          format: uri
+          nullable: true
+        x_origin:
+          type: number
+          format: double
+        y_origin:
+          type: number
+          format: double
+        resolution:
+          type: number
+          format: double
+        resize:
+          type: number
+          format: double
+        opacity:
+          type: number
+          format: double
+        description:
+          type: string
+          maxLength: 255
+        map:
+          type: string
+          format: uuid
+    PatchedZoneSet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        traffic_zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrafficZone'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 255
+        version:
+          type: string
+          maxLength: 50
+        is_active:
+          type: boolean
+        map:
+          type: string
+          format: uuid
+    PriorityEnum:
+      enum:
+      - LOW
+      - NORMAL
+      - HIGH
+      - URGENT
+      type: string
+      description: |-
+        * `LOW` - Low
+        * `NORMAL` - Normal
+        * `HIGH` - High
+        * `URGENT` - Urgent
+    Schedule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleStop'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 255
+        number_of_amr_need:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        number_of_active_order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        enable:
+          type: boolean
+        map:
+          type: string
+          format: uuid
+      required:
+      - id
+      - map
+      - name
+      - stops
+    ScheduleStop:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/StopAction'
+          readOnly: true
+        role_id:
+          type: string
+          maxLength: 50
+        sequence:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        schedule:
+          type: string
+          format: uuid
+      required:
+      - actions
+      - id
+      - role_id
+      - schedule
+    StopAction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        sequence:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        schedule_stop:
+          type: string
+          format: uuid
+        action:
+          type: string
+          format: uuid
+      required:
+      - action
+      - id
+      - schedule_stop
+    SubOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        order_update_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        path: {}
+        status:
+          $ref: '#/components/schemas/SubOrderStatusEnum'
+        outcome:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        order:
+          type: string
+          format: uuid
+        order_master:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - created_at
+      - id
+      - order
+      - updated_at
+    SubOrderStatusEnum:
+      enum:
+      - PENDING
+      - SENT
+      - PROCESSING
+      - COMPLETED
+      - FAILED
+      - CANCELLED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `SENT` - Sent
+        * `PROCESSING` - Processing
+        * `COMPLETED` - Completed
+        * `FAILED` - Failed
+        * `CANCELLED` - Cancelled
+    SupplyRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        line_id:
+          type: string
+          maxLength: 64
+        material_id:
+          type: string
+          maxLength: 64
+        priority:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+        sla_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/SupplyRequestStatusEnum'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        buffer:
+          type: string
+          format: uuid
+      required:
+      - buffer
+      - created_at
+      - id
+      - line_id
+      - material_id
+    SupplyRequestStatusEnum:
+      enum:
+      - PENDING
+      - PAIRED
+      - DELIVERED
+      - CANCELLED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `PAIRED` - Paired
+        * `DELIVERED` - Delivered
+        * `CANCELLED` - Cancelled
+    TopicControl:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        topic:
+          type: string
+          maxLength: 255
+        topic_type:
+          $ref: '#/components/schemas/TopicTypeEnum'
+        manufacturer:
+          type: string
+          maxLength: 100
+        version:
+          type: string
+          maxLength: 50
+        header_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        last_call:
+          type: string
+          format: date-time
+          nullable: true
+        amr:
+          type: string
+      required:
+      - amr
+      - id
+      - topic
+    TopicTypeEnum:
+      enum:
+      - order
+      - instantActions
+      - state
+      - connection
+      - visualization
+      type: string
+      description: |-
+        * `order` - Order
+        * `instantActions` - Instant Actions
+        * `state` - State
+        * `connection` - Connection
+        * `visualization` - Visualization
+    TrafficZone:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        type:
+          $ref: '#/components/schemas/TrafficZoneTypeEnum'
+        description:
+          type: string
+          maxLength: 255
+        max_occupancy:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        priority:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        max_speed:
+          type: number
+          format: double
+        zone_set:
+          type: string
+          format: uuid
+        map:
+          type: string
+          format: uuid
+      required:
+      - id
+      - map
+      - name
+      - zone_set
+    TrafficZoneTypeEnum:
+      enum:
+      - INTERSECTION
+      - AISLE
+      - CHARGING_AREA
+      - BUFFER_AREA
+      - RESTRICTED
+      type: string
+      description: |-
+        * `INTERSECTION` - Intersection
+        * `AISLE` - Aisle
+        * `CHARGING_AREA` - Charging Area
+        * `BUFFER_AREA` - Buffer Area
+        * `RESTRICTED` - Restricted
+    WorldMapLayer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        image:
+          type: string
+          format: uri
+          nullable: true
+        x_origin:
+          type: number
+          format: double
+        y_origin:
+          type: number
+          format: double
+        resolution:
+          type: number
+          format: double
+        resize:
+          type: number
+          format: double
+        opacity:
+          type: number
+          format: double
+        description:
+          type: string
+          maxLength: 255
+        map:
+          type: string
+          format: uuid
+      required:
+      - id
+      - map
+      - name
+    ZoneSet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        traffic_zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrafficZone'
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 255
+        version:
+          type: string
+          maxLength: 50
+        is_active:
+          type: boolean
+        map:
+          type: string
+          format: uuid
+      required:
+      - id
+      - map
+      - name
+      - traffic_zones
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

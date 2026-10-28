@@ -1,0 +1,602 @@
+{% extends "base.html" %}
+
+{% block title %}Orders Management - ACS Fleet Hub{% endblock %}
+{% block nav_orders %}active{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <div>
+        <h5 class="fw-bold mb-0 text-white d-flex align-items-center gap-2">
+            <i class="fa-solid fa-clipboard-list text-warning"></i>
+            Transport Orders Management
+        </h5>
+        <small class="text-secondary">Dispatch, monitor, update and inspect AMR material handling missions</small>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm px-3" onclick="loadAllOrders()">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+        </button>
+        <button class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#createOrderModal">
+            <i class="fa-solid fa-plus me-1"></i> Create Order
+        </button>
+    </div>
+</div>
+
+<!-- Mini Stats Counters -->
+<div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card card-acs p-2 px-3">
+            <span class="text-secondary small fw-semibold text-uppercase" style="font-size:0.6875rem;">Total
+                Orders</span>
+            <div class="h4 fw-bold mb-0 tabular-nums" id="stat-total">0</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card card-acs p-2 px-3">
+            <span class="text-secondary small fw-semibold text-uppercase" style="font-size:0.6875rem;">Processing</span>
+            <div class="h4 fw-bold text-warning mb-0 tabular-nums" id="stat-processing">0</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card card-acs p-2 px-3">
+            <span class="text-secondary small fw-semibold text-uppercase" style="font-size:0.6875rem;">Pending</span>
+            <div class="h4 fw-bold text-info mb-0 tabular-nums" id="stat-pending">0</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card card-acs p-2 px-3">
+            <span class="text-secondary small fw-semibold text-uppercase" style="font-size:0.6875rem;">Completed</span>
+            <div class="h4 fw-bold text-success mb-0 tabular-nums" id="stat-completed">0</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters & Search Toolbar -->
+<div class="card card-acs p-2 px-3 mb-3">
+    <div class="row g-2 align-items-center">
+        <div class="col-md-4">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-body-tertiary border-secondary text-secondary">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" class="form-control form-control-acs" id="filter-search"
+                    placeholder="Search by Order ID or Description..." oninput="filterOrders()">
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <select class="form-select form-select-acs form-select-sm" id="filter-status" onchange="filterOrders()">
+                <option value="ALL">All Statuses</option>
+                <option value="PENDING">PENDING</option>
+                <option value="PROCESSING">PROCESSING</option>
+                <option value="COMPLETED">COMPLETED</option>
+                <option value="FAILED">FAILED</option>
+                <option value="CANCELLED">CANCELLED</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <select class="form-select form-select-acs form-select-sm" id="filter-type" onchange="filterOrders()">
+                <option value="ALL">All Types</option>
+                <option value="TRANSPORT">TRANSPORT</option>
+                <option value="CHARGE">CHARGE</option>
+                <option value="PARK">PARK</option>
+                <option value="MAINTENANCE">MAINTENANCE</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select form-select-acs form-select-sm" id="filter-priority" onchange="filterOrders()">
+                <option value="ALL">All Priorities</option>
+                <option value="URGENT">URGENT</option>
+                <option value="HIGH">HIGH</option>
+                <option value="NORMAL">NORMAL</option>
+                <option value="LOW">LOW</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Tabular Orders List -->
+<div class="card card-acs">
+    <div class="table-responsive">
+        <table class="table table-acs table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Type</th>
+                    <th>Source Node</th>
+                    <th>Target Node</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th class="text-end pe-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="orders-full-tbody">
+                <tr>
+                    <td colspan="8" class="text-center text-muted py-5">Loading orders list...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal 1: Create Order -->
+<div class="modal fade" id="createOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">
+                    <i class="fa-solid fa-plus-circle text-primary me-2"></i>Create Transport Mission
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createOrderForm">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Order ID</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control form-control-acs font-mono" id="create-order-id"
+                                placeholder="Leave empty for auto-generation">
+                            <button class="btn btn-outline-secondary" type="button" onclick="generateRandomOrderId()"
+                                title="Auto-generate ID">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Mission Type</label>
+                            <select class="form-select form-select-acs" id="create-order-type">
+                                <option value="TRANSPORT">TRANSPORT</option>
+                                <option value="CHARGE">CHARGE</option>
+                                <option value="PARK">PARK</option>
+                                <option value="MAINTENANCE">MAINTENANCE</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Priority</label>
+                            <select class="form-select form-select-acs" id="create-priority">
+                                <option value="NORMAL">NORMAL</option>
+                                <option value="HIGH">HIGH</option>
+                                <option value="URGENT">URGENT</option>
+                                <option value="LOW">LOW</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Source Station / Node</label>
+                        <select class="form-select form-select-acs font-mono" id="create-source-node">
+                            <option value="">(Auto: Current AMR Location)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Target Station / Node <span
+                                class="text-danger">*</span></label>
+                        <select class="form-select form-select-acs font-mono" id="create-target-node" required>
+                            <option value="">Select target node...</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label text-secondary small fw-semibold">Description</label>
+                        <textarea class="form-control form-control-acs" id="create-description" rows="2"
+                            placeholder="Mission details, pallet serial..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3"
+                    data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm px-4" onclick="submitCreateOrder()">
+                    <i class="fa-solid fa-check me-1"></i> Submit Mission
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Edit Order -->
+<div class="modal fade" id="editOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">
+                    <i class="fa-solid fa-pen-to-square text-warning me-2"></i>Update Order: <span
+                        id="edit-order-id-title" class="font-mono text-primary"></span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editOrderForm">
+                    <input type="hidden" id="edit-uuid">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Status</label>
+                            <select class="form-select form-select-acs" id="edit-status">
+                                <option value="PENDING">PENDING</option>
+                                <option value="PROCESSING">PROCESSING</option>
+                                <option value="COMPLETED">COMPLETED</option>
+                                <option value="FAILED">FAILED</option>
+                                <option value="CANCELLED">CANCELLED</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Priority</label>
+                            <select class="form-select form-select-acs" id="edit-priority">
+                                <option value="LOW">LOW</option>
+                                <option value="NORMAL">NORMAL</option>
+                                <option value="HIGH">HIGH</option>
+                                <option value="URGENT">URGENT</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Source Node</label>
+                            <select class="form-select form-select-acs font-mono" id="edit-source-node">
+                                <option value="">(None)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Target Node</label>
+                            <select class="form-select form-select-acs font-mono" id="edit-target-node">
+                                <option value="">(None)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label text-secondary small fw-semibold">Description</label>
+                        <textarea class="form-control form-control-acs" id="edit-description" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3"
+                    data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning btn-sm px-4 fw-semibold text-dark"
+                    onclick="submitEditOrder()">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: View Details -->
+<div class="modal fade" id="detailOrderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">
+                    <i class="fa-solid fa-circle-info text-info me-2"></i>Mission Details: <span id="detail-order-id"
+                        class="font-mono text-primary"></span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4">
+                        <div class="p-2 rounded bg-body-tertiary border">
+                            <small class="text-secondary d-block" style="font-size:0.7rem;">Status</small>
+                            <span id="detail-status" class="fw-bold"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 rounded bg-body-tertiary border">
+                            <small class="text-secondary d-block" style="font-size:0.7rem;">Mission Type</small>
+                            <span id="detail-type" class="fw-bold"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 rounded bg-body-tertiary border">
+                            <small class="text-secondary d-block" style="font-size:0.7rem;">Priority</small>
+                            <span id="detail-priority" class="fw-bold"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <div class="p-2 rounded bg-body-tertiary border">
+                            <small class="text-secondary d-block" style="font-size:0.7rem;">Source Station
+                                (Pickup)</small>
+                            <span id="detail-source" class="font-mono text-success fw-bold"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-2 rounded bg-body-tertiary border">
+                            <small class="text-secondary d-block" style="font-size:0.7rem;">Target Station
+                                (Dropoff)</small>
+                            <span id="detail-target" class="font-mono text-primary fw-bold"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-secondary small fw-semibold">Notes / Description</label>
+                    <div class="p-2 rounded bg-body-tertiary border small" id="detail-desc"></div>
+                </div>
+
+                <!-- SubOrders List Table -->
+                <div class="mt-3">
+                    <h6 class="fw-bold mb-2" style="font-size:0.8125rem;"><i
+                            class="fa-solid fa-network-wired text-primary me-2"></i>VDA 5050 SubOrders Breakdown</h6>
+                    <div class="table-responsive border rounded">
+                        <table class="table table-acs table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Update ID</th>
+                                    <th>Status</th>
+                                    <th>Trajectory (Waypoints)</th>
+                                    <th>Outcome</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detail-suborders-tbody">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">No sub-order segments generated.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-4"
+                    data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let allOrders = [];
+    let cachedNodes = [];
+
+    function generateRandomOrderId() {
+        document.getElementById('create-order-id').value = `ORD_${Date.now()}`;
+    }
+
+    async function loadNodes() {
+        try {
+            const res = await apiCall('/api/map/nodes/');
+            cachedNodes = res.results || res;
+
+            const createSrc = document.getElementById('create-source-node');
+            const createTgt = document.getElementById('create-target-node');
+            const editSrc = document.getElementById('edit-source-node');
+            const editTgt = document.getElementById('edit-target-node');
+
+            createSrc.innerHTML = '<option value="">(Auto: Current AMR Location)</option>';
+            createTgt.innerHTML = '<option value="">Select target node...</option>';
+            editSrc.innerHTML = '<option value="">(None)</option>';
+            editTgt.innerHTML = '<option value="">(None)</option>';
+
+            cachedNodes.forEach(n => {
+                const opt = `<option value="${n.id}">${n.name} (${n.type})</option>`;
+                createSrc.innerHTML += opt;
+                createTgt.innerHTML += opt;
+                editSrc.innerHTML += opt;
+                editTgt.innerHTML += opt;
+            });
+        } catch (e) {
+            console.error('Error loading nodes:', e);
+        }
+    }
+
+    async function loadAllOrders() {
+        try {
+            const res = await apiCall('/api/acs/orders/');
+            allOrders = res.results || res;
+            updateStats();
+            renderOrdersTable(allOrders);
+        } catch (e) {
+            showToast(`Error loading orders: ${e.message}`, 'error');
+        }
+    }
+
+    function updateStats() {
+        let processing = 0, pending = 0, completed = 0;
+        allOrders.forEach(o => {
+            if (o.status === 'PROCESSING') processing++;
+            else if (o.status === 'PENDING') pending++;
+            else if (o.status === 'COMPLETED') completed++;
+        });
+
+        document.getElementById('stat-total').innerText = allOrders.length;
+        document.getElementById('stat-processing').innerText = processing;
+        document.getElementById('stat-pending').innerText = pending;
+        document.getElementById('stat-completed').innerText = completed;
+    }
+
+    function filterOrders() {
+        const query = document.getElementById('filter-search').value.toLowerCase().trim();
+        const status = document.getElementById('filter-status').value;
+        const type = document.getElementById('filter-type').value;
+        const priority = document.getElementById('filter-priority').value;
+
+        const filtered = allOrders.filter(o => {
+            const matchSearch = !query || o.order_id.toLowerCase().includes(query) || (o.description && o.description.toLowerCase().includes(query));
+            const matchStatus = status === 'ALL' || o.status === status;
+            const matchType = type === 'ALL' || o.order_type === type;
+            const matchPriority = priority === 'ALL' || o.priority === priority;
+            return matchSearch && matchStatus && matchType && matchPriority;
+        });
+
+        renderOrdersTable(filtered);
+    }
+
+    function renderOrdersTable(orders) {
+        const tbody = document.getElementById('orders-full-tbody');
+        tbody.innerHTML = '';
+
+        if (orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-5">No orders found matching filter criteria.</td></tr>';
+            return;
+        }
+
+        orders.forEach(o => {
+            let badgeClass = 'badge-idle';
+            if (o.status === 'PROCESSING') badgeClass = 'badge-busy';
+            else if (o.status === 'COMPLETED') badgeClass = 'badge-online';
+            else if (o.status === 'FAILED') badgeClass = 'badge-offline';
+            else if (o.status === 'CANCELLED') badgeClass = 'badge-error';
+
+            const srcName = o.source_node_name || (o.source_node ? o.source_node.substring(0, 8) : 'Auto');
+            const tgtName = o.target_node_name || (o.target_node ? o.target_node.substring(0, 8) : '-');
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="fw-bold font-mono text-primary">${o.order_id}</td>
+                    <td><span class="badge bg-secondary bg-opacity-25 text-secondary border">${o.order_type}</span></td>
+                    <td><span class="font-mono">${srcName}</span></td>
+                    <td><span class="font-mono">${tgtName}</span></td>
+                    <td>
+                        <span class="badge-status ${o.priority === 'URGENT' ? 'badge-error' : (o.priority === 'HIGH' ? 'badge-busy' : 'badge-idle')}">
+                            ${o.priority}
+                        </span>
+                    </td>
+                    <td><span class="badge-status ${badgeClass}">${o.status}</span></td>
+                    <td><span class="font-mono text-secondary" style="font-size:0.75rem;">${new Date(o.created_at).toLocaleString()}</span></td>
+                    <td class="text-end pe-3">
+                        <div class="d-inline-flex gap-1">
+                            <button class="btn btn-outline-secondary btn-action-icon" title="View Details" onclick="openDetailModal('${o.id}')">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-action-icon" title="Edit Order" onclick="openEditModal('${o.id}')">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-action-icon" title="Delete Order" onclick="deleteOrder('${o.id}', '${o.order_id}')">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    async function submitCreateOrder() {
+        const tgt = document.getElementById('create-target-node').value;
+        if (!tgt) {
+            showToast('Please select a Target Node!', 'warning');
+            return;
+        }
+
+        const payload = {
+            order_id: document.getElementById('create-order-id').value.trim() || undefined,
+            order_type: document.getElementById('create-order-type').value,
+            priority: document.getElementById('create-priority').value,
+            source_node: document.getElementById('create-source-node').value || null,
+            target_node: tgt,
+            description: document.getElementById('create-description').value.trim(),
+            status: 'PENDING',
+        };
+
+        try {
+            await apiCall('/api/acs/orders/', 'POST', payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createOrderModal'));
+            if (modal) modal.hide();
+            document.getElementById('createOrderForm').reset();
+            showToast('Order created successfully!', 'success');
+            loadAllOrders();
+        } catch (e) {
+            showToast(`Creation failed: ${e.message}`, 'error');
+        }
+    }
+
+    function openEditModal(orderUuid) {
+        const order = allOrders.find(o => o.id === orderUuid);
+        if (!order) return;
+
+        document.getElementById('edit-uuid').value = order.id;
+        document.getElementById('edit-order-id-title').innerText = order.order_id;
+        document.getElementById('edit-status').value = order.status;
+        document.getElementById('edit-priority').value = order.priority;
+        document.getElementById('edit-source-node').value = order.source_node || '';
+        document.getElementById('edit-target-node').value = order.target_node || '';
+        document.getElementById('edit-description').value = order.description || '';
+
+        const modal = new bootstrap.Modal(document.getElementById('editOrderModal'));
+        modal.show();
+    }
+
+    async function submitEditOrder() {
+        const uuid = document.getElementById('edit-uuid').value;
+        const payload = {
+            status: document.getElementById('edit-status').value,
+            priority: document.getElementById('edit-priority').value,
+            source_node: document.getElementById('edit-source-node').value || null,
+            target_node: document.getElementById('edit-target-node').value || null,
+            description: document.getElementById('edit-description').value.trim(),
+        };
+
+        try {
+            await apiCall(`/api/acs/orders/${uuid}/`, 'PATCH', payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editOrderModal'));
+            if (modal) modal.hide();
+            showToast('Order updated successfully!', 'success');
+            loadAllOrders();
+        } catch (e) {
+            showToast(`Update error: ${e.message}`, 'error');
+        }
+    }
+
+    function openDetailModal(orderUuid) {
+        const order = allOrders.find(o => o.id === orderUuid);
+        if (!order) return;
+
+        document.getElementById('detail-order-id').innerText = order.order_id;
+        document.getElementById('detail-status').innerText = order.status;
+        document.getElementById('detail-type').innerText = order.order_type;
+        document.getElementById('detail-priority').innerText = order.priority;
+        document.getElementById('detail-source').innerText = order.source_node_name || order.source_node || 'Auto';
+        document.getElementById('detail-target').innerText = order.target_node_name || order.target_node || '-';
+        document.getElementById('detail-desc').innerText = order.description || 'No description provided';
+
+        const subTbody = document.getElementById('detail-suborders-tbody');
+        subTbody.innerHTML = '';
+        if (order.suborders && order.suborders.length > 0) {
+            order.suborders.forEach(s => {
+                subTbody.innerHTML += `
+                    <tr>
+                        <td class="font-mono">#${s.order_update_id}</td>
+                        <td><span class="badge bg-secondary">${s.status}</span></td>
+                        <td><code>${s.path?.nodes ? s.path.nodes.length + ' waypoints' : 'No path'}</code></td>
+                        <td>${s.outcome || '-'}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            subTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No SubOrders generated for this mission.</td></tr>';
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('detailOrderModal'));
+        modal.show();
+    }
+
+    function deleteOrder(orderUuid, orderId) {
+        showConfirmDialog({
+            title: 'Delete Order',
+            message: `Are you sure you want to delete order "${orderId}"? This action cannot be undone.`,
+            btnText: 'Delete Order',
+            btnClass: 'btn-danger',
+            onConfirm: async () => {
+                try {
+                    await apiCall(`/api/acs/orders/${orderUuid}/`, 'DELETE');
+                    showToast(`Deleted order ${orderId}!`, 'success');
+                    loadAllOrders();
+                } catch (e) {
+                    showToast(`Delete failed: ${e.message}`, 'error');
+                }
+            }
+        });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        loadNodes();
+        loadAllOrders();
+    });
+</script>
+{% endblock %}

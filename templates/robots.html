@@ -1,0 +1,522 @@
+{% extends "base.html" %}
+
+{% block title %}Robots Fleet Management - ACS Fleet Hub{% endblock %}
+{% block nav_robots %}active{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <div>
+        <h5 class="fw-bold mb-0 text-white d-flex align-items-center gap-2">
+            <i class="fa-solid fa-truck-ramp-box text-primary"></i>
+            AMR Fleet Management
+        </h5>
+        <small class="text-secondary">Real-time VDA 5050 telemetry, battery health, operating modes and fleet commands</small>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary btn-sm px-3" onclick="loadRobots()">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+        </button>
+        <button class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#createRobotModal">
+            <i class="fa-solid fa-plus me-1"></i> Add Robot
+        </button>
+    </div>
+</div>
+
+<!-- Fleet KPI Counters -->
+<div class="row g-2 mb-3">
+    <div class="col-6 col-md-3">
+        <div class="card card-acs p-2 px-3">
+            <span class="text-secondary small fw-semibold text-uppercase" style="font-size:0.6875rem;">Total Fleet</span>
+            <div class="h4 fw-bold mb-0 tabular-nums" id="stat-robots-total">0</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card card-acs p-2 px-3">
+            <span class="text-secondary small fw-semibold text-uppercase" style="font-size:0.6875rem;">Online AMRs</span>
+            <div class="h4 fw-bold text-success mb-0 tabular-nums" id="stat-robots-online">0</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card card-acs p-2 px-3">
+            <span class="text-secondary small fw-semibold text-uppercase" style="font-size:0.6875rem;">Idle & Ready</span>
+            <div class="h4 fw-bold text-primary mb-0 tabular-nums" id="stat-robots-idle">0</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card card-acs p-2 px-3">
+            <span class="text-secondary small fw-semibold text-uppercase" style="font-size:0.6875rem;">Navigating / Busy</span>
+            <div class="h4 fw-bold text-warning mb-0 tabular-nums" id="stat-robots-busy">0</div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Toolbar -->
+<div class="card card-acs p-2 px-3 mb-3">
+    <div class="row g-2 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-body-tertiary border-secondary text-secondary">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <input type="text" class="form-control form-control-acs" id="filter-robot-search" placeholder="Search by Serial Number, Model or IP..." oninput="filterRobots()">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select class="form-select form-select-acs form-select-sm" id="filter-robot-status" onchange="filterRobots()">
+                <option value="ALL">All Statuses</option>
+                <option value="ONLINE">Online Only</option>
+                <option value="OFFLINE">Offline Only</option>
+                <option value="IDLE">Idle Only</option>
+                <option value="BUSY">Busy Only</option>
+            </select>
+        </div>
+        <div class="col-md-2 text-md-end text-secondary small font-mono" id="robots-count-label">
+            0 units
+        </div>
+    </div>
+</div>
+
+<!-- Pure Tabular AMR Fleet Table -->
+<div class="card card-acs">
+    <div class="table-responsive">
+        <table class="table table-acs table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Serial Number</th>
+                    <th>Model</th>
+                    <th>IP & Port</th>
+                    <th>Mode</th>
+                    <th>Battery</th>
+                    <th>Current Location</th>
+                    <th>Assigned Order</th>
+                    <th>Status</th>
+                    <th class="text-end pe-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="robots-table-tbody">
+                <tr><td colspan="9" class="text-center text-muted py-5">Loading AMR fleet data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal 1: Add New Robot -->
+<div class="modal fade" id="createRobotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">
+                    <i class="fa-solid fa-plus-circle text-primary me-2"></i>Register New AMR Vehicle
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createRobotForm">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Serial Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-acs font-mono" id="robot-serial" placeholder="e.g. AMR_004" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">AMR Model</label>
+                            <input type="text" class="form-control form-control-acs" id="robot-model" value="AMR_LIFT_500">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Interface Protocol</label>
+                            <input type="text" class="form-control form-control-acs font-mono" id="robot-interface" value="VDA5050_2.1.0" readonly>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">IPv4 Address</label>
+                            <input type="text" class="form-control form-control-acs font-mono" id="robot-ip" placeholder="192.168.1.104">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Port</label>
+                            <input type="number" class="form-control form-control-acs font-mono" id="robot-port" value="1800">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Operating Mode</label>
+                        <select class="form-select form-select-acs" id="robot-operating-mode">
+                            <option value="AUTOMATIC">AUTOMATIC</option>
+                            <option value="SEMIAUTOMATIC">SEMIAUTOMATIC</option>
+                            <option value="MANUAL">MANUAL</option>
+                            <option value="SERVICE">SERVICE</option>
+                            <option value="TEACHIN">TEACHIN</option>
+                        </select>
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="robot-is-online" checked>
+                        <label class="form-check-label small" for="robot-is-online">Set Online on creation</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm px-4" onclick="submitCreateRobot()">
+                    <i class="fa-solid fa-check me-1"></i> Register AMR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Edit Robot -->
+<div class="modal fade" id="editRobotModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">
+                    <i class="fa-solid fa-pen-to-square text-warning me-2"></i>Configure Robot: <span id="edit-robot-serial-title" class="font-mono text-primary"></span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editRobotForm">
+                    <input type="hidden" id="edit-robot-serial">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Model</label>
+                        <input type="text" class="form-control form-control-acs" id="edit-robot-model">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">IP Address</label>
+                            <input type="text" class="form-control form-control-acs font-mono" id="edit-robot-ip">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Port</label>
+                            <input type="number" class="form-control form-control-acs font-mono" id="edit-robot-port">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Operating Mode</label>
+                        <select class="form-select form-select-acs" id="edit-robot-mode">
+                            <option value="AUTOMATIC">AUTOMATIC</option>
+                            <option value="SEMIAUTOMATIC">SEMIAUTOMATIC</option>
+                            <option value="MANUAL">MANUAL</option>
+                            <option value="SERVICE">SERVICE</option>
+                            <option value="TEACHIN">TEACHIN</option>
+                        </select>
+                    </div>
+                    <div class="d-flex gap-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="edit-robot-online">
+                            <label class="form-check-label small" for="edit-robot-online">Online</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="edit-robot-idle">
+                            <label class="form-check-label small" for="edit-robot-idle">Idle</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="edit-robot-paused">
+                            <label class="form-check-label small" for="edit-robot-paused">Paused</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning btn-sm px-4 fw-semibold text-dark" onclick="submitEditRobot()">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: State & Telemetry Inspector -->
+<div class="modal fade" id="stateInspectorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold">
+                    <i class="fa-solid fa-microchip text-info me-2"></i>VDA 5050 Telemetry Inspector: <span id="telemetry-serial" class="font-mono text-primary"></span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-2 mb-3">
+                    <div class="col-md-3">
+                        <div class="p-2 rounded bg-body-tertiary border">
+                            <small class="text-secondary d-block" style="font-size:0.7rem;">Position X</small>
+                            <span id="telemetry-x" class="font-mono fw-bold">0.00 m</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 rounded bg-body-tertiary border">
+                            <small class="text-secondary d-block" style="font-size:0.7rem;">Position Y</small>
+                            <span id="telemetry-y" class="font-mono fw-bold">0.00 m</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 rounded bg-body-tertiary border">
+                            <small class="text-secondary d-block" style="font-size:0.7rem;">Heading Theta</small>
+                            <span id="telemetry-theta" class="font-mono fw-bold">0.00 rad</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-2 rounded bg-body-tertiary border">
+                            <small class="text-secondary d-block" style="font-size:0.7rem;">Last Passed Node</small>
+                            <span id="telemetry-node" class="font-mono text-primary fw-bold">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-secondary small fw-semibold">Battery State Object</label>
+                    <pre class="bg-body-tertiary p-2 rounded small border font-mono" id="telemetry-battery-json" style="max-height: 120px; overflow-y: auto;"></pre>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-secondary small fw-semibold">Active Error List</label>
+                    <pre class="bg-body-tertiary p-2 rounded small text-danger border font-mono" id="telemetry-errors-json" style="max-height: 100px; overflow-y: auto;"></pre>
+                </div>
+
+                <div>
+                    <label class="form-label text-secondary small fw-semibold">Loads / Carried Material</label>
+                    <pre class="bg-body-tertiary p-2 rounded small text-success border font-mono" id="telemetry-loads-json" style="max-height: 100px; overflow-y: auto;"></pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let allRobots = [];
+
+    async function loadRobots() {
+        try {
+            const res = await apiCall('/api/amr/vehicles/');
+            allRobots = res.results || res;
+            updateCounters();
+            renderRobotsTable(allRobots);
+        } catch (e) {
+            showToast(`Error loading robots: ${e.message}`, 'error');
+        }
+    }
+
+    function updateCounters() {
+        let online = 0, idle = 0, busy = 0;
+        allRobots.forEach(r => {
+            if (r.is_online) online++;
+            if (r.is_idle) idle++;
+            else busy++;
+        });
+
+        document.getElementById('stat-robots-total').innerText = allRobots.length;
+        document.getElementById('stat-robots-online').innerText = online;
+        document.getElementById('stat-robots-idle').innerText = idle;
+        document.getElementById('stat-robots-busy').innerText = busy;
+        document.getElementById('robots-count-label').innerText = `${allRobots.length} units registered`;
+    }
+
+    function filterRobots() {
+        const query = document.getElementById('filter-robot-search').value.toLowerCase().trim();
+        const status = document.getElementById('filter-robot-status').value;
+
+        const filtered = allRobots.filter(r => {
+            const matchSearch = !query || r.serial_number.toLowerCase().includes(query) || r.amr_model.toLowerCase().includes(query) || (r.ip_address && r.ip_address.includes(query));
+            let matchStatus = true;
+            if (status === 'ONLINE') matchStatus = r.is_online;
+            else if (status === 'OFFLINE') matchStatus = !r.is_online;
+            else if (status === 'IDLE') matchStatus = r.is_idle;
+            else if (status === 'BUSY') matchStatus = !r.is_idle;
+            return matchSearch && matchStatus;
+        });
+
+        renderRobotsTable(filtered);
+    }
+
+    function renderRobotsTable(robots) {
+        const tbody = document.getElementById('robots-table-tbody');
+        tbody.innerHTML = '';
+
+        if (robots.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-5">No AMRs matching current filter.</td></tr>';
+            return;
+        }
+
+        robots.forEach(r => {
+            const battery = r.battery_state?.batteryCharge !== undefined ? Math.round(r.battery_state.batteryCharge) : 100;
+            let batColor = 'text-success';
+            if (battery < 50) batColor = 'text-warning';
+            if (battery < 25) batColor = 'text-danger';
+
+            const statusBadge = r.is_online
+                ? (r.is_idle ? '<span class="badge-status badge-idle">IDLE</span>' : '<span class="badge-status badge-busy">BUSY</span>')
+                : '<span class="badge-status badge-offline">OFFLINE</span>';
+
+            const pos = r.amr_position || {};
+            const posText = (typeof pos.x === 'number') ? `(${pos.x.toFixed(1)}, ${pos.y.toFixed(1)})` : (r.last_node_id || '-');
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="fw-bold font-mono text-primary">${r.serial_number}</td>
+                    <td>${r.amr_model}</td>
+                    <td><span class="font-mono text-secondary" style="font-size:0.75rem;">${r.ip_address || '127.0.0.1'}:${r.port}</span></td>
+                    <td><span class="badge bg-secondary bg-opacity-25 text-secondary border">${r.operating_mode}</span></td>
+                    <td>
+                        <span class="tabular-nums fw-bold ${batColor}">
+                            <i class="fa-solid fa-battery-three-quarters me-1"></i>${battery}%
+                        </span>
+                    </td>
+                    <td><span class="font-mono">${posText}</span></td>
+                    <td><span class="font-mono ${r.order_id ? 'text-warning fw-bold' : 'text-muted'}">${r.order_id || '-'}</span></td>
+                    <td>
+                        <div class="d-inline-flex align-items-center gap-1">
+                            ${statusBadge}
+                            ${r.paused ? '<span class="badge-status badge-busy">PAUSED</span>' : ''}
+                        </div>
+                    </td>
+                    <td class="text-end pe-3">
+                        <div class="d-inline-flex gap-1">
+                            <button class="btn btn-outline-secondary btn-action-icon" title="Reset to IDLE" onclick="resetRobot('${r.serial_number}')">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-action-icon" title="Inspect Telemetry" onclick="inspectTelemetry('${r.serial_number}')">
+                                <i class="fa-solid fa-microchip"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary btn-action-icon" title="Configure Robot" onclick="openEditRobotModal('${r.serial_number}')">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-action-icon" title="Delete Robot" onclick="deleteRobot('${r.serial_number}')">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    async function submitCreateRobot() {
+        const serial = document.getElementById('robot-serial').value.trim();
+        if (!serial) {
+            showToast('Serial Number is required!', 'warning');
+            return;
+        }
+
+        const payload = {
+            serial_number: serial,
+            amr_model: document.getElementById('robot-model').value.trim() || 'AMR_LIFT_500',
+            interface: document.getElementById('robot-interface').value,
+            ip_address: document.getElementById('robot-ip').value.trim() || null,
+            port: parseInt(document.getElementById('robot-port').value) || 1800,
+            operating_mode: document.getElementById('robot-operating-mode').value,
+            is_online: document.getElementById('robot-is-online').checked,
+            is_idle: true,
+        };
+
+        try {
+            await apiCall('/api/amr/vehicles/', 'POST', payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createRobotModal'));
+            if (modal) modal.hide();
+            document.getElementById('createRobotForm').reset();
+            showToast(`AMR ${serial} registered successfully!`, 'success');
+            loadRobots();
+        } catch (e) {
+            showToast(`Registration failed: ${e.message}`, 'error');
+        }
+    }
+
+    function openEditRobotModal(serialNumber) {
+        const robot = allRobots.find(r => r.serial_number === serialNumber);
+        if (!robot) return;
+
+        document.getElementById('edit-robot-serial').value = robot.serial_number;
+        document.getElementById('edit-robot-serial-title').innerText = robot.serial_number;
+        document.getElementById('edit-robot-model').value = robot.amr_model;
+        document.getElementById('edit-robot-ip').value = robot.ip_address || '';
+        document.getElementById('edit-robot-port').value = robot.port;
+        document.getElementById('edit-robot-mode').value = robot.operating_mode;
+        document.getElementById('edit-robot-online').checked = robot.is_online;
+        document.getElementById('edit-robot-idle').checked = robot.is_idle;
+        document.getElementById('edit-robot-paused').checked = robot.paused;
+
+        const modal = new bootstrap.Modal(document.getElementById('editRobotModal'));
+        modal.show();
+    }
+
+    async function submitEditRobot() {
+        const serial = document.getElementById('edit-robot-serial').value;
+        const payload = {
+            amr_model: document.getElementById('edit-robot-model').value.trim(),
+            ip_address: document.getElementById('edit-robot-ip').value.trim() || null,
+            port: parseInt(document.getElementById('edit-robot-port').value) || 1800,
+            operating_mode: document.getElementById('edit-robot-mode').value,
+            is_online: document.getElementById('edit-robot-online').checked,
+            is_idle: document.getElementById('edit-robot-idle').checked,
+            paused: document.getElementById('edit-robot-paused').checked,
+        };
+
+        try {
+            await apiCall(`/api/amr/vehicles/${serial}/`, 'PATCH', payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editRobotModal'));
+            if (modal) modal.hide();
+            showToast(`Updated AMR ${serial} configuration!`, 'success');
+            loadRobots();
+        } catch (e) {
+            showToast(`Update failed: ${e.message}`, 'error');
+        }
+    }
+
+    async function resetRobot(serialNumber) {
+        try {
+            await apiCall(`/api/amr/vehicles/${serialNumber}/reset_status/`, 'POST');
+            showToast(`Reset AMR ${serialNumber} to IDLE!`, 'success');
+            loadRobots();
+        } catch (e) {
+            showToast(`Reset error: ${e.message}`, 'error');
+        }
+    }
+
+    function deleteRobot(serialNumber) {
+        showConfirmDialog({
+            title: 'Delete AMR Vehicle',
+            message: `Are you sure you want to remove AMR "${serialNumber}" from fleet registry?`,
+            btnText: 'Delete Vehicle',
+            btnClass: 'btn-danger',
+            onConfirm: async () => {
+                try {
+                    await apiCall(`/api/amr/vehicles/${serialNumber}/`, 'DELETE');
+                    showToast(`Removed AMR ${serialNumber}!`, 'success');
+                    loadRobots();
+                } catch (e) {
+                    showToast(`Delete failed: ${e.message}`, 'error');
+                }
+            }
+        });
+    }
+
+    function inspectTelemetry(serialNumber) {
+        const robot = allRobots.find(r => r.serial_number === serialNumber);
+        if (!robot) return;
+
+        document.getElementById('telemetry-serial').innerText = robot.serial_number;
+        const pos = robot.amr_position || {};
+        document.getElementById('telemetry-x').innerText = (typeof pos.x === 'number') ? `${pos.x.toFixed(2)} m` : '0.00 m';
+        document.getElementById('telemetry-y').innerText = (typeof pos.y === 'number') ? `${pos.y.toFixed(2)} m` : '0.00 m';
+        document.getElementById('telemetry-theta').innerText = (typeof pos.theta === 'number') ? `${pos.theta.toFixed(2)} rad` : '0.00 rad';
+        document.getElementById('telemetry-node').innerText = robot.last_node_id || '-';
+
+        document.getElementById('telemetry-battery-json').innerText = JSON.stringify(robot.battery_state || {}, null, 2);
+        document.getElementById('telemetry-errors-json').innerText = JSON.stringify(robot.errors || [], null, 2);
+        document.getElementById('telemetry-loads-json').innerText = JSON.stringify(robot.loads || [], null, 2);
+
+        const modal = new bootstrap.Modal(document.getElementById('stateInspectorModal'));
+        modal.show();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        loadRobots();
+        setInterval(loadRobots, 3000);
+    });
+</script>
+{% endblock %}

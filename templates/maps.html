@@ -1,0 +1,1124 @@
+{% extends "base.html" %}
+
+{% block title %}Maps & Buffers Management - ACS Fleet Hub{% endblock %}
+{% block nav_maps %}active{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <div>
+        <h5 class="fw-bold mb-0 text-white d-flex align-items-center gap-2">
+            <i class="fa-solid fa-map-location-dot text-primary"></i>
+            Maps & Buffers Management
+        </h5>
+        <small class="text-secondary">Configure layout floor plans, material transfer buffer stations, nodes and directional edges</small>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <button class="btn btn-outline-secondary btn-sm px-3" onclick="refreshMapModule()">
+            <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+        </button>
+        <button class="btn btn-outline-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#createBufferModal">
+            <i class="fa-solid fa-box me-1"></i> + New Buffer
+        </button>
+        <button class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#createMapModal">
+            <i class="fa-solid fa-map me-1"></i> + New Map
+        </button>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-pills gap-1 mb-3 p-1 rounded bg-body-tertiary border" id="mapTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active btn-sm rounded px-3 py-1 fw-semibold" id="tab-visual-btn" data-bs-toggle="pill" data-bs-target="#tab-visual" type="button" role="tab" style="font-size:0.8125rem;">
+            <i class="fa-solid fa-layer-group me-1"></i> 2D Grid & Waypoints
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link btn-sm rounded px-3 py-1 fw-semibold" id="tab-buffers-btn" data-bs-toggle="pill" data-bs-target="#tab-buffers" type="button" role="tab" style="font-size:0.8125rem;">
+            <i class="fa-solid fa-boxes-stacked me-1"></i> Buffer Stations
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link btn-sm rounded px-3 py-1 fw-semibold" id="tab-maps-btn" data-bs-toggle="pill" data-bs-target="#tab-maps" type="button" role="tab" style="font-size:0.8125rem;">
+            <i class="fa-solid fa-folder-tree me-1"></i> Map Base Layouts
+        </button>
+    </li>
+</ul>
+
+<!-- Tab Contents -->
+<div class="tab-content" id="mapTabContent">
+    <!-- TAB 1: 2D Grid & Node/Edge Lists -->
+    <div class="tab-pane fade show active" id="tab-visual" role="tabpanel">
+        <div class="row g-3">
+            <!-- 2D Canvas Editor Map -->
+            <div class="col-lg-8">
+                <div class="card card-acs p-3 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <h6 class="fw-bold mb-0"><i class="fa-solid fa-compass-drafting text-primary me-2"></i>Interactive Factory Grid</h6>
+                            <small class="text-secondary" style="font-size:0.75rem;">Click anywhere on map to inspect coordinates or create waypoints</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary px-2" data-bs-toggle="modal" data-bs-target="#createNodeModal" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-location-dot me-1"></i> + Node
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary px-2" data-bs-toggle="modal" data-bs-target="#createEdgeModal" style="font-size:0.75rem;">
+                                <i class="fa-solid fa-route me-1"></i> + Edge
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Map Container -->
+                    <div id="interactive-map" class="map-container" style="height: 520px;"></div>
+
+                    <!-- Coordinate Inspector Bar -->
+                    <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center small text-secondary" style="font-size:0.75rem;">
+                        <div>
+                            Clicked Coordinates: <span class="font-mono text-primary fw-bold" id="selected-coords">Click anywhere on canvas</span>
+                        </div>
+                        <div class="font-mono text-muted">VDA 5050 Metric Grid</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nodes & Edges Tables -->
+            <div class="col-lg-4">
+                <div class="card card-acs p-3 h-100 d-flex flex-column">
+                    <!-- Nodes Table -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold mb-0"><i class="fa-solid fa-diagram-project text-info me-2"></i>Map Nodes</h6>
+                        <span class="font-mono text-secondary small" id="nodes-count">0 nodes</span>
+                    </div>
+                    <div class="table-responsive mb-3 border rounded" style="max-height: 230px;">
+                        <table class="table table-acs table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Node Name</th>
+                                    <th>Type</th>
+                                    <th>Coords (X, Y)</th>
+                                    <th class="text-end">Del</th>
+                                </tr>
+                            </thead>
+                            <tbody id="nodes-tbody">
+                                <tr><td colspan="4" class="text-center text-muted py-3">Loading nodes...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Edges Table -->
+                    <div class="d-flex justify-content-between align-items-center mb-2 pt-2 border-top">
+                        <h6 class="fw-bold mb-0"><i class="fa-solid fa-bezier-curve text-warning me-2"></i>Edges (Paths)</h6>
+                        <span class="font-mono text-secondary small" id="edges-count">0 edges</span>
+                    </div>
+                    <div class="table-responsive flex-grow-1 border rounded" style="max-height: 210px;">
+                        <table class="table table-acs table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Start &rarr; End</th>
+                                    <th>Dir</th>
+                                    <th>V_max</th>
+                                    <th class="text-end">Del</th>
+                                </tr>
+                            </thead>
+                            <tbody id="edges-tbody">
+                                <tr><td colspan="4" class="text-center text-muted py-3">Loading edges...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: Buffer Stations (Pure Tabular List) -->
+    <div class="tab-pane fade" id="tab-buffers" role="tabpanel">
+        <div class="card card-acs p-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                <div>
+                    <h6 class="fw-bold mb-0"><i class="fa-solid fa-boxes-stacked text-info me-2"></i>Buffer Stations Registry</h6>
+                    <small class="text-secondary" style="font-size:0.75rem;">Physical pickup/dropoff stations, occupancy states and hardware bindings</small>
+                </div>
+                <button class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#createBufferModal">
+                    <i class="fa-solid fa-plus me-1"></i> Add Buffer Station
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-acs table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Buffer Name</th>
+                            <th>RSSID Code</th>
+                            <th>Type</th>
+                            <th>Occupancy Status</th>
+                            <th>Bound Node</th>
+                            <th>Enabled</th>
+                            <th>IP Address</th>
+                            <th class="text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="buffers-table-tbody">
+                        <tr><td colspan="8" class="text-center text-muted py-5">Loading buffer stations...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: Map Bases (Pure Tabular List) -->
+    <div class="tab-pane fade" id="tab-maps" role="tabpanel">
+        <div class="card card-acs p-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                <div>
+                    <h6 class="fw-bold mb-0"><i class="fa-solid fa-folder-tree text-primary me-2"></i>Map Base Layouts</h6>
+                    <small class="text-secondary" style="font-size:0.75rem;">Plant floor revisions, operational areas and active deployment versions</small>
+                </div>
+                <button class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#createMapModal">
+                    <i class="fa-solid fa-plus me-1"></i> Create Map Base
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-acs table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Map Name</th>
+                            <th>Area (Part)</th>
+                            <th>Version</th>
+                            <th>Status</th>
+                            <th>Description</th>
+                            <th>Created At</th>
+                            <th class="text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="maps-table-tbody">
+                        <tr><td colspan="7" class="text-center text-muted py-5">Loading map bases...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- Modal 1: Create Map -->
+<div class="modal fade" id="createMapModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-map text-primary me-2"></i>Create New Map Base</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createMapForm">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Map Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-acs font-mono" id="map-name" placeholder="e.g. CNC_Prod_2G_Main_Floor" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Area / Part</label>
+                            <input type="text" class="form-control form-control-acs font-mono" id="map-part" value="CNC_2G">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Version</label>
+                            <input type="text" class="form-control form-control-acs font-mono" id="map-version" value="1.0.0">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Status</label>
+                        <select class="form-select form-select-acs" id="map-status">
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                            <option value="DRAFT">DRAFT</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label text-secondary small fw-semibold">Description</label>
+                        <textarea class="form-control form-control-acs" id="map-desc" rows="2" placeholder="Plant layout details..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm px-4" onclick="submitCreateMap()">
+                    <i class="fa-solid fa-check me-1"></i> Save Map
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 2: Edit Map -->
+<div class="modal fade" id="editMapModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square text-warning me-2"></i>Configure Map Base</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editMapForm">
+                    <input type="hidden" id="edit-map-id">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Map Name</label>
+                        <input type="text" class="form-control form-control-acs font-mono" id="edit-map-name" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Area / Part</label>
+                            <input type="text" class="form-control form-control-acs font-mono" id="edit-map-part">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Version</label>
+                            <input type="text" class="form-control form-control-acs font-mono" id="edit-map-version">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Status</label>
+                        <select class="form-select form-select-acs" id="edit-map-status">
+                            <option value="ACTIVE">ACTIVE</option>
+                            <option value="INACTIVE">INACTIVE</option>
+                            <option value="DRAFT">DRAFT</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label text-secondary small fw-semibold">Description</label>
+                        <textarea class="form-control form-control-acs" id="edit-map-desc" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning btn-sm px-4 fw-semibold text-dark" onclick="submitEditMap()">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 3: Create Buffer -->
+<div class="modal fade" id="createBufferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-box text-primary me-2"></i>Create Buffer Station</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createBufferForm">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Buffer Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-acs font-mono" id="buffer-name" placeholder="e.g. Buffer_CNC1_In" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">RSSID Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-acs font-mono" id="buffer-rssid" placeholder="BUFF_CNC_01" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Station Type</label>
+                            <select class="form-select form-select-acs" id="buffer-type">
+                                <option value="PICK">PICK (Pickup only)</option>
+                                <option value="DROP">DROP (Dropoff only)</option>
+                                <option value="DUAL" selected>DUAL (Bidirectional)</option>
+                                <option value="INSPECTION">INSPECTION</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Initial Status</label>
+                            <select class="form-select form-select-acs" id="buffer-status">
+                                <option value="EMPTY">EMPTY</option>
+                                <option value="OCCUPIED">OCCUPIED</option>
+                                <option value="RESERVED">RESERVED</option>
+                                <option value="ERROR">ERROR</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Bind To Node</label>
+                            <select class="form-select form-select-acs font-mono" id="buffer-node">
+                                <option value="">(Unbound)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Sensor IPv4 Address</label>
+                        <input type="text" class="form-control form-control-acs font-mono" id="buffer-ip" placeholder="192.168.1.201">
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="buffer-enable" checked>
+                        <label class="form-check-label small" for="buffer-enable">Enabled for operations</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm px-4" onclick="submitCreateBuffer()">
+                    <i class="fa-solid fa-check me-1"></i> Register Buffer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 4: Edit Buffer -->
+<div class="modal fade" id="editBufferModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square text-warning me-2"></i>Configure Buffer Station</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editBufferForm">
+                    <input type="hidden" id="edit-buffer-id">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Buffer Name</label>
+                        <input type="text" class="form-control form-control-acs font-mono" id="edit-buffer-name" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">RSSID Code</label>
+                            <input type="text" class="form-control form-control-acs font-mono" id="edit-buffer-rssid" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Station Type</label>
+                            <select class="form-select form-select-acs" id="edit-buffer-type">
+                                <option value="PICK">PICK</option>
+                                <option value="DROP">DROP</option>
+                                <option value="DUAL">DUAL</option>
+                                <option value="INSPECTION">INSPECTION</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Occupancy Status</label>
+                            <select class="form-select form-select-acs" id="edit-buffer-status">
+                                <option value="EMPTY">EMPTY</option>
+                                <option value="OCCUPIED">OCCUPIED</option>
+                                <option value="RESERVED">RESERVED</option>
+                                <option value="ERROR">ERROR</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Bound Node</label>
+                            <select class="form-select form-select-acs font-mono" id="edit-buffer-node">
+                                <option value="">(Unbound)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Sensor IPv4 Address</label>
+                        <input type="text" class="form-control form-control-acs font-mono" id="edit-buffer-ip">
+                    </div>
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="edit-buffer-enable">
+                        <label class="form-check-label small" for="edit-buffer-enable">Enabled</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning btn-sm px-4 fw-semibold text-dark" onclick="submitEditBuffer()">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 5: Add Node -->
+<div class="modal fade" id="createNodeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-location-dot text-primary me-2"></i>Create Map Node</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createNodeForm">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Map Base <span class="text-danger">*</span></label>
+                        <select class="form-select form-select-acs" id="node-map-id" required></select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Node Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-acs font-mono" id="node-name" placeholder="N08_Drop_CNC3" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Type</label>
+                            <select class="form-select form-select-acs" id="node-type">
+                                <option value="TRANSIT">TRANSIT</option>
+                                <option value="PICK">PICK</option>
+                                <option value="DROP">DROP</option>
+                                <option value="CHARGE">CHARGE</option>
+                                <option value="PARK">PARK</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Coord X (m)</label>
+                            <input type="number" step="0.1" class="form-control form-control-acs font-mono" id="node-x" value="20.0" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Coord Y (m)</label>
+                            <input type="number" step="0.1" class="form-control form-control-acs font-mono" id="node-y" value="30.0" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Theta (rad)</label>
+                            <input type="number" step="0.01" class="form-control form-control-acs font-mono" id="node-theta" value="0.0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm px-4" onclick="submitCreateNode()">
+                    <i class="fa-solid fa-check me-1"></i> Save Node
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal 6: Add Edge -->
+<div class="modal fade" id="createEdgeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-acs">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-route text-primary me-2"></i>Create Edge Connection</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createEdgeForm">
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small fw-semibold">Map Base <span class="text-danger">*</span></label>
+                        <select class="form-select form-select-acs" id="edge-map-id" required></select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Start Node <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-acs font-mono" id="edge-start-node" required></select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">End Node <span class="text-danger">*</span></label>
+                            <select class="form-select form-select-acs font-mono" id="edge-end-node" required></select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Direction</label>
+                            <select class="form-select form-select-acs" id="edge-direction">
+                                <option value="BIDIRECTIONAL">BIDIRECTIONAL</option>
+                                <option value="FORWARD">FORWARD</option>
+                                <option value="REVERSE">REVERSE</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-secondary small fw-semibold">Max Speed (m/s)</label>
+                            <input type="number" step="0.1" class="form-control form-control-acs font-mono" id="edge-max-speed" value="1.2">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary btn-sm px-4" onclick="submitCreateEdge()">
+                    <i class="fa-solid fa-check me-1"></i> Save Edge
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let iMap = null;
+    let allMaps = [];
+    let allBuffers = [];
+    let allNodes = [];
+    let allEdges = [];
+    let nodeMarkers = {};
+    let edgeLines = [];
+
+    function initInteractiveMap() {
+        if (iMap) return;
+        iMap = L.map('interactive-map', {
+            crs: L.CRS.Simple,
+            minZoom: -2,
+            maxZoom: 3,
+        });
+
+        const bounds = [[0, 0], [60, 100]];
+        iMap.fitBounds(bounds);
+
+        L.polyline([[0,0], [60,0], [60,100], [0,100], [0,0]], {
+            color: '#3b82f6',
+            weight: 2,
+            dashArray: '4, 4',
+            opacity: 0.7
+        }).addTo(iMap);
+
+        iMap.on('click', function(e) {
+            const y = e.latlng.lat;
+            const x = e.latlng.lng;
+            document.getElementById('selected-coords').innerText = `X: ${x.toFixed(2)}m, Y: ${y.toFixed(2)}m`;
+            document.getElementById('node-x').value = x.toFixed(2);
+            document.getElementById('node-y').value = y.toFixed(2);
+        });
+    }
+
+    async function refreshMapModule() {
+        await Promise.all([
+            loadMaps(),
+            loadBuffers(),
+            loadNodesAndEdges(),
+        ]);
+        showToast('Maps and Buffers data refreshed!', 'info');
+    }
+
+    // ==================== 1. MAPS (CRUD) ====================
+    async function loadMaps() {
+        try {
+            const res = await apiCall('/api/map/bases/');
+            allMaps = res.results || res;
+            renderMapsTable(allMaps);
+
+            const nodeMapSelect = document.getElementById('node-map-id');
+            const edgeMapSelect = document.getElementById('edge-map-id');
+            nodeMapSelect.innerHTML = '';
+            edgeMapSelect.innerHTML = '';
+
+            allMaps.forEach(m => {
+                const opt = `<option value="${m.id}">${m.name} (${m.part})</option>`;
+                nodeMapSelect.innerHTML += opt;
+                edgeMapSelect.innerHTML += opt;
+            });
+        } catch (e) {
+            showToast(`Error loading maps: ${e.message}`, 'error');
+        }
+    }
+
+    function renderMapsTable(maps) {
+        const tbody = document.getElementById('maps-table-tbody');
+        tbody.innerHTML = '';
+
+        if (maps.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-5">No map bases found.</td></tr>';
+            return;
+        }
+
+        maps.forEach(m => {
+            let statusBadge = m.status === 'ACTIVE' 
+                ? '<span class="badge-status badge-online">ACTIVE</span>'
+                : '<span class="badge-status badge-offline">' + m.status + '</span>';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="fw-bold font-mono text-primary">${m.name}</td>
+                    <td><span class="badge bg-secondary bg-opacity-25 text-secondary border">${m.part}</span></td>
+                    <td><span class="font-mono">v${m.version}</span></td>
+                    <td>${statusBadge}</td>
+                    <td><small class="text-secondary">${m.description || '-'}</small></td>
+                    <td><span class="font-mono text-secondary" style="font-size:0.75rem;">${new Date(m.created_at).toLocaleDateString()}</span></td>
+                    <td class="text-end pe-3">
+                        <div class="d-inline-flex gap-1">
+                            <button class="btn btn-outline-secondary btn-action-icon" title="Configure Map" onclick="openEditMapModal('${m.id}')">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-action-icon" title="Delete Map" onclick="deleteMap('${m.id}', '${m.name}')">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    async function submitCreateMap() {
+        const name = document.getElementById('map-name').value.trim();
+        if (!name) {
+            showToast('Map Name is required!', 'warning');
+            return;
+        }
+
+        const payload = {
+            name: name,
+            part: document.getElementById('map-part').value.trim() || 'CNC_2G',
+            version: document.getElementById('map-version').value.trim() || '1.0.0',
+            status: document.getElementById('map-status').value,
+            description: document.getElementById('map-desc').value.trim(),
+        };
+
+        try {
+            await apiCall('/api/map/bases/', 'POST', payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createMapModal'));
+            if (modal) modal.hide();
+            document.getElementById('createMapForm').reset();
+            showToast(`Created map ${name}!`, 'success');
+            loadMaps();
+        } catch (e) {
+            showToast(`Creation error: ${e.message}`, 'error');
+        }
+    }
+
+    function openEditMapModal(mapId) {
+        const m = allMaps.find(x => x.id === mapId);
+        if (!m) return;
+
+        document.getElementById('edit-map-id').value = m.id;
+        document.getElementById('edit-map-name').value = m.name;
+        document.getElementById('edit-map-part').value = m.part;
+        document.getElementById('edit-map-version').value = m.version;
+        document.getElementById('edit-map-status').value = m.status;
+        document.getElementById('edit-map-desc').value = m.description || '';
+
+        const modal = new bootstrap.Modal(document.getElementById('editMapModal'));
+        modal.show();
+    }
+
+    async function submitEditMap() {
+        const mapId = document.getElementById('edit-map-id').value;
+        const payload = {
+            name: document.getElementById('edit-map-name').value.trim(),
+            part: document.getElementById('edit-map-part').value.trim(),
+            version: document.getElementById('edit-map-version').value.trim(),
+            status: document.getElementById('edit-map-status').value,
+            description: document.getElementById('edit-map-desc').value.trim(),
+        };
+
+        try {
+            await apiCall(`/api/map/bases/${mapId}/`, 'PATCH', payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editMapModal'));
+            if (modal) modal.hide();
+            showToast('Map base updated successfully!', 'success');
+            loadMaps();
+        } catch (e) {
+            showToast(`Update error: ${e.message}`, 'error');
+        }
+    }
+
+    function deleteMap(mapId, mapName) {
+        showConfirmDialog({
+            title: 'Delete Map Base',
+            message: `Are you sure you want to delete map "${mapName}"? Connected Nodes and Edges will also be removed.`,
+            btnText: 'Delete Map',
+            btnClass: 'btn-danger',
+            onConfirm: async () => {
+                try {
+                    await apiCall(`/api/map/bases/${mapId}/`, 'DELETE');
+                    showToast(`Deleted map ${mapName}!`, 'success');
+                    loadMaps();
+                } catch (e) {
+                    showToast(`Delete failed: ${e.message}`, 'error');
+                }
+            }
+        });
+    }
+
+    // ==================== 2. BUFFERS (CRUD) ====================
+    async function loadBuffers() {
+        try {
+            const res = await apiCall('/api/buffer/stations/');
+            allBuffers = res.results || res;
+            renderBuffersTable(allBuffers);
+        } catch (e) {
+            showToast(`Error loading buffers: ${e.message}`, 'error');
+        }
+    }
+
+    function renderBuffersTable(buffers) {
+        const tbody = document.getElementById('buffers-table-tbody');
+        tbody.innerHTML = '';
+
+        if (buffers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-5">No buffer stations configured.</td></tr>';
+            return;
+        }
+
+        buffers.forEach(b => {
+            let statusBadge = 'badge-idle';
+            if (b.status === 'OCCUPIED') statusBadge = 'badge-busy';
+            else if (b.status === 'EMPTY') statusBadge = 'badge-online';
+            else if (b.status === 'ERROR') statusBadge = 'badge-error';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="fw-bold font-mono text-primary"><i class="fa-solid fa-box me-2 text-info"></i>${b.name}</td>
+                    <td><span class="font-mono">${b.rssid}</span></td>
+                    <td><span class="badge bg-secondary bg-opacity-25 text-secondary border">${b.type}</span></td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn btn-sm badge-status ${statusBadge} dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                ${b.status}
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-dark">
+                                <li><a class="dropdown-item" href="javascript:quickChangeBufferStatus('${b.id}', 'EMPTY')">EMPTY</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickChangeBufferStatus('${b.id}', 'OCCUPIED')">OCCUPIED</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickChangeBufferStatus('${b.id}', 'RESERVED')">RESERVED</a></li>
+                                <li><a class="dropdown-item" href="javascript:quickChangeBufferStatus('${b.id}', 'ERROR')">ERROR</a></li>
+                            </ul>
+                        </div>
+                    </td>
+                    <td><span class="font-mono text-info">${b.node_name || (b.node ? b.node.substring(0,8) : '-')}</span></td>
+                    <td>
+                        <span class="${b.enable ? 'text-success' : 'text-danger'} fw-semibold" style="font-size:0.75rem;">
+                            <i class="fa-solid ${b.enable ? 'fa-check' : 'fa-xmark'} me-1"></i>${b.enable ? 'Enabled' : 'Disabled'}
+                        </span>
+                    </td>
+                    <td><span class="font-mono text-secondary" style="font-size:0.75rem;">${b.ip_address || '-'}</span></td>
+                    <td class="text-end pe-3">
+                        <div class="d-inline-flex gap-1">
+                            <button class="btn btn-outline-secondary btn-action-icon" title="Configure Buffer" onclick="openEditBufferModal('${b.id}')">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-action-icon" title="Delete Buffer" onclick="deleteBuffer('${b.id}', '${b.name}')">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    async function quickChangeBufferStatus(bufferId, newStatus) {
+        try {
+            await apiCall(`/api/buffer/stations/${bufferId}/`, 'PATCH', { status: newStatus });
+            showToast(`Buffer status switched to ${newStatus}!`, 'success');
+            loadBuffers();
+        } catch (e) {
+            showToast(`Status update failed: ${e.message}`, 'error');
+        }
+    }
+
+    async function submitCreateBuffer() {
+        const name = document.getElementById('buffer-name').value.trim();
+        const rssid = document.getElementById('buffer-rssid').value.trim();
+        if (!name || !rssid) {
+            showToast('Buffer Name and RSSID Code are required!', 'warning');
+            return;
+        }
+
+        const payload = {
+            name: name,
+            rssid: rssid,
+            type: document.getElementById('buffer-type').value,
+            status: document.getElementById('buffer-status').value,
+            node: document.getElementById('buffer-node').value || null,
+            ip_address: document.getElementById('buffer-ip').value.trim() || null,
+            enable: document.getElementById('buffer-enable').checked,
+        };
+
+        try {
+            await apiCall('/api/buffer/stations/', 'POST', payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createBufferModal'));
+            if (modal) modal.hide();
+            document.getElementById('createBufferForm').reset();
+            showToast(`Created buffer ${name}!`, 'success');
+            loadBuffers();
+        } catch (e) {
+            showToast(`Creation error: ${e.message}`, 'error');
+        }
+    }
+
+    function openEditBufferModal(bufferId) {
+        const b = allBuffers.find(x => x.id === bufferId);
+        if (!b) return;
+
+        document.getElementById('edit-buffer-id').value = b.id;
+        document.getElementById('edit-buffer-name').value = b.name;
+        document.getElementById('edit-buffer-rssid').value = b.rssid;
+        document.getElementById('edit-buffer-type').value = b.type;
+        document.getElementById('edit-buffer-status').value = b.status;
+        document.getElementById('edit-buffer-node').value = b.node || '';
+        document.getElementById('edit-buffer-ip').value = b.ip_address || '';
+        document.getElementById('edit-buffer-enable').checked = b.enable;
+
+        const modal = new bootstrap.Modal(document.getElementById('editBufferModal'));
+        modal.show();
+    }
+
+    async function submitEditBuffer() {
+        const bufferId = document.getElementById('edit-buffer-id').value;
+        const payload = {
+            name: document.getElementById('edit-buffer-name').value.trim(),
+            rssid: document.getElementById('edit-buffer-rssid').value.trim(),
+            type: document.getElementById('edit-buffer-type').value,
+            status: document.getElementById('edit-buffer-status').value,
+            node: document.getElementById('edit-buffer-node').value || null,
+            ip_address: document.getElementById('edit-buffer-ip').value.trim() || null,
+            enable: document.getElementById('edit-buffer-enable').checked,
+        };
+
+        try {
+            await apiCall(`/api/buffer/stations/${bufferId}/`, 'PATCH', payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editBufferModal'));
+            if (modal) modal.hide();
+            showToast('Buffer configuration updated!', 'success');
+            loadBuffers();
+        } catch (e) {
+            showToast(`Update error: ${e.message}`, 'error');
+        }
+    }
+
+    function deleteBuffer(bufferId, bufferName) {
+        showConfirmDialog({
+            title: 'Delete Buffer Station',
+            message: `Are you sure you want to delete buffer "${bufferName}"?`,
+            btnText: 'Delete Buffer',
+            btnClass: 'btn-danger',
+            onConfirm: async () => {
+                try {
+                    await apiCall(`/api/buffer/stations/${bufferId}/`, 'DELETE');
+                    showToast(`Deleted buffer ${bufferName}!`, 'success');
+                    loadBuffers();
+                } catch (e) {
+                    showToast(`Delete failed: ${e.message}`, 'error');
+                }
+            }
+        });
+    }
+
+    // ==================== 3. NODES & EDGES (CRUD) ====================
+    async function loadNodesAndEdges() {
+        try {
+            const [nodesRes, edgesRes] = await Promise.all([
+                apiCall('/api/map/nodes/'),
+                apiCall('/api/map/edges/'),
+            ]);
+            allNodes = nodesRes.results || nodesRes;
+            allEdges = edgesRes.results || edgesRes;
+
+            document.getElementById('nodes-count').innerText = `${allNodes.length} nodes`;
+            document.getElementById('edges-count').innerText = `${allEdges.length} edges`;
+
+            renderNodesTable(allNodes);
+            renderEdgesTable(allEdges);
+            renderCanvasMap();
+
+            const bufNodeSelect = document.getElementById('buffer-node');
+            const editBufNodeSelect = document.getElementById('edit-buffer-node');
+            const edgeStart = document.getElementById('edge-start-node');
+            const edgeEnd = document.getElementById('edge-end-node');
+
+            bufNodeSelect.innerHTML = '<option value="">(Unbound)</option>';
+            editBufNodeSelect.innerHTML = '<option value="">(Unbound)</option>';
+            edgeStart.innerHTML = '';
+            edgeEnd.innerHTML = '';
+
+            allNodes.forEach(n => {
+                const opt = `<option value="${n.id}">${n.name} (${n.type})</option>`;
+                bufNodeSelect.innerHTML += opt;
+                editBufNodeSelect.innerHTML += opt;
+                edgeStart.innerHTML += opt;
+                edgeEnd.innerHTML += opt;
+            });
+
+        } catch (e) {
+            console.error('Error loading nodes/edges:', e);
+        }
+    }
+
+    function renderNodesTable(nodes) {
+        const tbody = document.getElementById('nodes-tbody');
+        tbody.innerHTML = '';
+        if (nodes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No nodes registered.</td></tr>';
+            return;
+        }
+        nodes.forEach(n => {
+            tbody.innerHTML += `
+                <tr>
+                    <td class="fw-bold font-mono text-primary">${n.name}</td>
+                    <td><span class="badge bg-secondary bg-opacity-25 text-secondary border" style="font-size:0.65rem;">${n.type}</span></td>
+                    <td><span class="font-mono text-secondary" style="font-size:0.75rem;">(${n.x.toFixed(1)}, ${n.y.toFixed(1)})</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-outline-danger btn-action-icon" title="Delete Node" onclick="deleteNode('${n.id}', '${n.name}')">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderEdgesTable(edges) {
+        const tbody = document.getElementById('edges-tbody');
+        tbody.innerHTML = '';
+        if (edges.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No edges registered.</td></tr>';
+            return;
+        }
+        edges.forEach(e => {
+            const startName = e.start_node_name || (allNodes.find(n => n.id === e.start_node)?.name || 'N/A');
+            const endName = e.end_node_name || (allNodes.find(n => n.id === e.end_node)?.name || 'N/A');
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><span class="font-mono text-primary">${startName} &rarr; ${endName}</span></td>
+                    <td><span class="badge bg-secondary bg-opacity-25 text-secondary border" style="font-size:0.65rem;">${e.direction === 'BIDIRECTIONAL' ? '&harr;' : '&rarr;'}</span></td>
+                    <td><span class="font-mono text-secondary" style="font-size:0.75rem;">${e.max_speed}m/s</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-outline-danger btn-action-icon" title="Delete Edge" onclick="deleteEdge('${e.id}')">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderCanvasMap() {
+        if (!iMap) return;
+
+        Object.values(nodeMarkers).forEach(m => iMap.removeLayer(m));
+        nodeMarkers = {};
+        edgeLines.forEach(l => iMap.removeLayer(l));
+        edgeLines = [];
+
+        allNodes.forEach(n => {
+            let color = '#3b82f6';
+            if (n.type === 'PICK' || n.type === 'DROP') color = '#10b981';
+            else if (n.type === 'CHARGE') color = '#f59e0b';
+            else if (n.type === 'PARK') color = '#8b5cf6';
+
+            const marker = L.circleMarker([n.y, n.x], {
+                radius: 6,
+                fillColor: color,
+                color: '#ffffff',
+                weight: 1.5,
+                fillOpacity: 0.9,
+            }).addTo(iMap);
+
+            marker.bindPopup(`<b>${n.name}</b><br>Type: <code>${n.type}</code><br>Coords: <code>(${n.x.toFixed(2)}, ${n.y.toFixed(2)})</code>`);
+            nodeMarkers[n.id] = marker;
+        });
+
+        allEdges.forEach(e => {
+            const startM = nodeMarkers[e.start_node];
+            const endM = nodeMarkers[e.end_node];
+            if (startM && endM) {
+                const line = L.polyline([startM.getLatLng(), endM.getLatLng()], {
+                    color: '#64748b',
+                    weight: 2,
+                    dashArray: e.direction === 'BIDIRECTIONAL' ? null : '4, 4',
+                }).addTo(iMap);
+                edgeLines.push(line);
+            }
+        });
+    }
+
+    async function submitCreateNode() {
+        const mapId = document.getElementById('node-map-id').value;
+        const name = document.getElementById('node-name').value.trim();
+        if (!mapId || !name) {
+            showToast('Map Base and Node Name are required!', 'warning');
+            return;
+        }
+
+        const payload = {
+            map: mapId,
+            name: name,
+            type: document.getElementById('node-type').value,
+            x: parseFloat(document.getElementById('node-x').value) || 0.0,
+            y: parseFloat(document.getElementById('node-y').value) || 0.0,
+            theta: parseFloat(document.getElementById('node-theta').value) || 0.0,
+            use_node: true,
+        };
+
+        try {
+            await apiCall('/api/map/nodes/', 'POST', payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createNodeModal'));
+            if (modal) modal.hide();
+            showToast(`Created node ${name}!`, 'success');
+            loadNodesAndEdges();
+        } catch (e) {
+            showToast(`Creation error: ${e.message}`, 'error');
+        }
+    }
+
+    function deleteNode(nodeId, nodeName) {
+        showConfirmDialog({
+            title: 'Delete Node',
+            message: `Are you sure you want to delete node "${nodeName}"? Attached edges will also be removed.`,
+            btnText: 'Delete Node',
+            btnClass: 'btn-danger',
+            onConfirm: async () => {
+                try {
+                    await apiCall(`/api/map/nodes/${nodeId}/`, 'DELETE');
+                    showToast(`Deleted node ${nodeName}!`, 'success');
+                    loadNodesAndEdges();
+                } catch (e) {
+                    showToast(`Delete failed: ${e.message}`, 'error');
+                }
+            }
+        });
+    }
+
+    async function submitCreateEdge() {
+        const mapId = document.getElementById('edge-map-id').value;
+        const start = document.getElementById('edge-start-node').value;
+        const end = document.getElementById('edge-end-node').value;
+
+        if (start === end) {
+            showToast('Start Node and End Node must not be identical!', 'warning');
+            return;
+        }
+
+        const payload = {
+            map: mapId,
+            start_node: start,
+            end_node: end,
+            direction: document.getElementById('edge-direction').value,
+            max_speed: parseFloat(document.getElementById('edge-max-speed').value) || 1.2,
+        };
+
+        try {
+            await apiCall('/api/map/edges/', 'POST', payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('createEdgeModal'));
+            if (modal) modal.hide();
+            showToast('Created edge connection!', 'success');
+            loadNodesAndEdges();
+        } catch (e) {
+            showToast(`Creation error: ${e.message}`, 'error');
+        }
+    }
+
+    function deleteEdge(edgeId) {
+        showConfirmDialog({
+            title: 'Delete Edge Connection',
+            message: 'Are you sure you want to delete this edge connection?',
+            btnText: 'Delete Edge',
+            btnClass: 'btn-danger',
+            onConfirm: async () => {
+                try {
+                    await apiCall(`/api/map/edges/${edgeId}/`, 'DELETE');
+                    showToast('Deleted edge!', 'success');
+                    loadNodesAndEdges();
+                } catch (e) {
+                    showToast(`Delete failed: ${e.message}`, 'error');
+                }
+            }
+        });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initInteractiveMap();
+        refreshMapModule();
+
+        document.getElementById('tab-visual-btn').addEventListener('shown.bs.tab', () => {
+            if (iMap) iMap.invalidateSize();
+        });
+    });
+</script>
+{% endblock %}
