@@ -29,7 +29,6 @@ WORKER_SCRIPTS = [
     os.path.join(ACS_DIR, "workers", "acs_aligo_sync.py"),
     os.path.join(ACS_DIR, "workers", "acs_order_send.py"),
     os.path.join(ACS_DIR, "workers", "acs_telemetry_sync.py"),
-    os.path.join(ACS_DIR, "workers", "acs_log_formatter.py"),
 ]
 
 

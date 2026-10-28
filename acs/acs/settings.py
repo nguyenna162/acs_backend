@@ -130,6 +130,9 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
+        "industrial": {
+            "()": "acs.log_formatter.IndustrialLogFormatter",
+        },
         "verbose": {
             "format": "[{asctime}] [{levelname}] [{name}] {message}",
             "style": "{",
@@ -138,12 +141,12 @@ LOGGING = {
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "verbose",
+            "formatter": "industrial",
         },
         "file": {
             "class": "logging.FileHandler",
             "filename": os.path.join(LOG_DIR, "acs_system.log"),
-            "formatter": "verbose",
+            "formatter": "industrial",
             "encoding": "utf-8",
         },
     },

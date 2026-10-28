@@ -82,7 +82,8 @@ def _register_dispatched_actions(suborder, amr, order_msg_dict, logger):
                     },
                 )
             except Exception as e:
-                logger.logger.warning(f"Failed to register action {action_id}: {e}")
+                log_fn = getattr(logger, "logger", logger)
+                log_fn.warning(f"Failed to register action {action_id}: {e}")
 
 
 def _resolve_anchor_seq(need_send_suborder, handle_amr, nodes):

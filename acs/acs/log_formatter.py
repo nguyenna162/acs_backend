@@ -1,6 +1,6 @@
 import logging
 import re
-from datetime import datetime
+import time
 from typing import List
 
 # Vietnamese to English normalizer
@@ -34,10 +34,13 @@ def transform_logger_name(raw_name: str) -> str:
     """
     Transforms dot-separated logger names into separated uppercase bracketed tags.
     e.g. 'worker.acs_order_send.mqtt_send_suborder' -> '[ACS_ORDER_SEND] [MQTT_SEND_SUBORDER]'
+         'workers.acs_order_master' -> '[ACS_ORDER_MASTER]'
          'worker.acs_order_master.order_master_processor' -> '[ACS_ORDER_MASTER] [ORDER_MASTER_PROCESSOR]'
          'worker.acs_supply_pairing.supply_request_pairing' -> '[ACS_SUPPLY_PAIRING] [SUPPLY_REQUEST_PAIRING]'
          'django.utils.autoreload' -> '[DJANGO] [AUTORELOAD]'
          'django.request' -> '[DJANGO] [REQUEST]'
+         'django.server' -> '[DJANGO] [SERVER]'
+         'root' -> '[ACS_SYSTEM]'
     """
     clean = raw_name.strip("[]").strip()
     parts: List[str] = [p.strip() for p in clean.split(".") if p.strip()]
@@ -50,8 +53,8 @@ def transform_logger_name(raw_name: str) -> str:
     if len(parts) >= 3 and parts[0].lower() == "django" and parts[1].lower() == "utils":
         parts = [parts[0], parts[-1]]
 
-    if not parts:
-        return f"[{clean.upper()}]"
+    if not parts or (len(parts) == 1 and parts[0].lower() in ("root", "")):
+        return "[ACS_SYSTEM]"
 
     # Wrap each section in uppercase square brackets
     return " ".join([f"[{p.upper()}]" for p in parts])
@@ -64,28 +67,28 @@ class IndustrialLogFormatter(logging.Formatter):
     [TIMESTAMP] [LEVEL] [MODULE] [COMPONENT] MESSAGE
     """
 
+    def formatTime(self, record: logging.LogRecord, datefmt: str = None) -> str:
+        ct = self.converter(record.created)
+        t = time.strftime("%Y-%m-%d %H:%M:%S", ct)
+        return f"{t},{int(record.msecs):03d}"
+
     def format(self, record: logging.LogRecord) -> str:
-        # Formatted timestamp with milliseconds: YYYY-MM-DD HH:MM:SS,mmm
-        record_time = datetime.fromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S,%03d") % int(record.msecs)
-        
-        # Transform logger name: worker.acs_order_send.mqtt_send_suborder -> [ACS_ORDER_SEND] [MQTT_SEND_SUBORDER]
+        record_time = self.formatTime(record)
         transformed_tags = transform_logger_name(record.name)
-        
-        # Level: [INFO], [WARNING], [ERROR]
         level_str = record.levelname
-        
-        # Message handling
         msg = record.getMessage()
-        
-        # Handle exceptions gracefully
+
+        # Translate any Vietnamese phrases to English
+        eng_msg = translate_to_english(msg)
+
+        formatted = f"[{record_time}] [{level_str}] {transformed_tags} {eng_msg}"
+
         if record.exc_info:
             if not record.exc_text:
                 record.exc_text = self.formatException(record.exc_info)
-            if record.exc_text:
-                exc_summary = record.exc_text.strip().split("\n")[-1]
-                msg = f"{msg} | Exception: {exc_summary}"
-                
-        # English translation
-        eng_msg = translate_to_english(msg)
-        
-        return f"[{record_time}] [{level_str}] {transformed_tags} {eng_msg}"
+        if record.exc_text:
+            formatted = f"{formatted}\n{record.exc_text}"
+        if record.stack_info:
+            formatted = f"{formatted}\n{self.formatStack(record.stack_info)}"
+
+        return formatted

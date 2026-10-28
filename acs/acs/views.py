@@ -152,16 +152,17 @@ def dispatch_amr(request):
 )
 @api_view(["GET"])
 def system_logs_file(request):
-    """Tra cứu trực tiếp nội dung file nhật ký hệ thống (mặc định lấy log đã chuẩn hóa)."""
-    raw = request.GET.get("raw", "false").lower() in ("true", "1")
-    formatted_path = os.path.join(os.path.dirname(__file__), "..", "logs", "acs_formatted.log")
+    """Retrieve runtime system log lines directly from acs_system.log."""
     raw_path = os.path.join(os.path.dirname(__file__), "..", "logs", "acs_system.log")
+    formatted_path = os.path.join(os.path.dirname(__file__), "..", "logs", "acs_formatted.log")
 
-    log_file_path = raw_path if raw or not os.path.exists(formatted_path) else formatted_path
+    # If raw requested and formatted_path exists, fallback, otherwise primary is acs_system.log
+    raw = request.GET.get("raw", "false").lower() in ("true", "1")
+    log_file_path = raw_path if (not raw and os.path.exists(raw_path)) else (formatted_path if os.path.exists(formatted_path) else raw_path)
     lines_count = int(request.GET.get("lines", 100))
 
     if not os.path.exists(log_file_path):
-        return Response({"logs": [], "message": "Log file does not exist yet.", "is_formatted": False})
+        return Response({"logs": [], "message": "Log file does not exist yet.", "is_formatted": True})
 
     with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
         all_lines = [line.rstrip("\r\n") for line in f.readlines()]
@@ -170,7 +171,7 @@ def system_logs_file(request):
     return Response({
         "total_lines": len(all_lines),
         "returned_lines": len(tail),
-        "is_formatted": log_file_path == formatted_path,
+        "is_formatted": True,
         "logs": tail,
     })
 
